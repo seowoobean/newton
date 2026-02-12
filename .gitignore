@@ -8,6 +8,7 @@ wheels/
 
 # Virtual Environments 
 .venv
+venv
 
 # Tool cache
 .cache/

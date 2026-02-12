@@ -1,0 +1,123 @@
+2026-02-10 13:08:39,186 [   INFO] [DATA]: loading data from phystwin/data/double_lift_cloth_1/final_data.pkl
+2026-02-10 13:08:39,488 [   INFO] [SIMULATION]: Initialize the Newton spring-mass system
+2026-02-10 13:09:07,950 [   INFO] [DATA]: loading data from phystwin/data/double_lift_cloth_1/final_data.pkl
+2026-02-10 13:09:08,200 [   INFO] [SIMULATION]: Initialize the Newton spring-mass system
+2026-02-10 13:12:24,822 [   INFO] [DATA]: loading data from phystwin/data/double_lift_cloth_1/final_data.pkl
+2026-02-10 13:12:25,080 [   INFO] [SIMULATION]: Initialize the Newton spring-mass system
+2026-02-10 13:13:23,124 [   INFO] [DATA]: loading data from phystwin/data/double_lift_cloth_1/final_data.pkl
+2026-02-10 13:13:23,381 [   INFO] [SIMULATION]: Initialize the Newton spring-mass system
+2026-02-10 13:14:11,803 [   INFO] [TrainNewton]: Iteration 0, Loss 0.000600774805460115
+2026-02-10 13:14:11,875 [   INFO] [TrainNewton]: Best model saved at epoch 0 (loss 0.000600774805460115)
+2026-02-10 13:14:59,565 [   INFO] [TrainNewton]: Iteration 1, Loss 0.0006007748002166805
+2026-02-10 13:15:47,064 [   INFO] [TrainNewton]: Iteration 2, Loss 0.0006007747442906649
+2026-02-10 13:16:34,881 [   INFO] [TrainNewton]: Iteration 3, Loss 0.0006007748325432856
+2026-02-10 13:17:21,914 [   INFO] [TrainNewton]: Iteration 4, Loss 0.0006007747663874318
+2026-02-10 13:18:09,240 [   INFO] [TrainNewton]: Iteration 5, Loss 0.0006007748152193886
+2026-02-10 13:18:57,361 [   INFO] [TrainNewton]: Iteration 6, Loss 0.0006007748087975652
+2026-02-10 13:19:46,534 [   INFO] [TrainNewton]: Iteration 7, Loss 0.0006007747532393019
+2026-02-10 13:20:36,697 [   INFO] [TrainNewton]: Iteration 8, Loss 0.0006007748038111616
+2026-02-10 13:21:26,358 [   INFO] [TrainNewton]: Iteration 9, Loss 0.0006007748472652368
+2026-02-10 13:22:13,891 [   INFO] [TrainNewton]: Iteration 10, Loss 0.000600774787634019
+2026-02-11 09:47:41,930 [   INFO] [DATA]: loading data from phystwin/data/double_lift_cloth_1/final_data.pkl
+2026-02-11 09:47:42,462 [   INFO] [Mapping]: springs total=41606 object=39686 controller=1920 (controller_scale=100.0)
+2026-02-11 09:47:42,463 [   INFO] [SIMULATION]: Initialize the Newton spring-mass system
+2026-02-11 09:47:42,480 [   INFO] [Control]: mode=force links=1920 ke=5e+04 kd=100
+2026-02-11 09:47:43,596 [   INFO] [Mapping]: spring_ke->spring_stiffness, spring_kd->spring_damping, ground_restitution/friction->ground contact, particle_restitution/friction->particle contact.
+2026-02-11 09:48:43,713 [   INFO] [DATA]: loading data from phystwin/data/double_lift_cloth_1/final_data.pkl
+2026-02-11 09:48:44,245 [   INFO] [Mapping]: springs total=41606 object=39686 controller=1920 (controller_scale=100.0)
+2026-02-11 09:48:44,246 [   INFO] [SIMULATION]: Initialize the Newton spring-mass system
+2026-02-11 09:48:44,265 [   INFO] [Control]: mode=force links=1920 ke=5e+04 kd=100
+2026-02-11 09:48:44,404 [   INFO] [Mapping]: spring_ke->spring_stiffness, spring_kd->spring_damping, ground_restitution/friction->ground contact, particle_restitution/friction->particle contact.
+2026-02-11 09:48:44,404 [   INFO] [Mapping Init]: spring_ke=9.67e+04 spring_kd=190 linear_drag=11.5 ground_restitution=0.834 ground_friction=1.95 particle_restitution=0.249 particle_friction=1.69 controller_spring_scale=100.0
+2026-02-11 09:48:44,404 [WARNING] [TrainNewton]: collision_learn is enabled, but Newton built-in contact uses scalar parameters (non-differentiable). ground_restitution/friction will remain fixed.
+2026-02-11 09:50:25,134 [   INFO] [DATA]: loading data from phystwin/data/double_lift_cloth_1/final_data.pkl
+2026-02-11 09:50:25,669 [   INFO] [Mapping]: springs total=41606 object=39686 controller=1920 (controller_scale=100.0)
+2026-02-11 09:50:25,670 [   INFO] [SIMULATION]: Initialize the Newton spring-mass system
+2026-02-11 09:50:25,686 [   INFO] [Control]: mode=force links=1920 ke=5e+04 kd=100
+2026-02-11 09:50:25,813 [   INFO] [Mapping]: spring_ke->spring_stiffness, spring_kd->spring_damping, ground_restitution/friction->ground contact, particle_restitution/friction->particle contact.
+2026-02-11 09:50:25,813 [   INFO] [Mapping Init]: spring_ke=9.67e+04 spring_kd=190 linear_drag=11.5 ground_restitution=0.834 ground_friction=1.95 particle_restitution=0.249 particle_friction=1.69 controller_spring_scale=100.0
+2026-02-11 09:50:25,813 [WARNING] [TrainNewton]: collision_learn is enabled, but Newton built-in contact uses scalar parameters (non-differentiable). ground_restitution/friction will remain fixed.
+2026-02-11 09:50:26,143 [   INFO] [TrainNewton]: start training (iterations=100, train_frame=116, lr=0.001)
+2026-02-11 09:51:00,023 [   INFO] [DATA]: loading data from phystwin/data/double_lift_cloth_1/final_data.pkl
+2026-02-11 09:51:00,563 [   INFO] [Mapping]: springs total=41606 object=39686 controller=1920 (controller_scale=100.0)
+2026-02-11 09:51:00,564 [   INFO] [SIMULATION]: Initialize the Newton spring-mass system
+2026-02-11 09:51:00,580 [   INFO] [Control]: mode=force links=1920 ke=5e+04 kd=100
+2026-02-11 09:51:00,712 [   INFO] [Mapping]: spring_ke->spring_stiffness, spring_kd->spring_damping, ground_restitution/friction->ground contact, particle_restitution/friction->particle contact.
+2026-02-11 09:51:00,712 [   INFO] [Mapping Init]: spring_ke=9.67e+04 spring_kd=190 linear_drag=11.5 ground_restitution=0.834 ground_friction=1.95 particle_restitution=0.249 particle_friction=1.69 controller_spring_scale=100.0
+2026-02-11 09:51:00,712 [WARNING] [TrainNewton]: collision_learn is enabled, but Newton built-in contact uses scalar parameters (non-differentiable). ground_restitution/friction will remain fixed.
+2026-02-11 09:51:01,043 [   INFO] [TrainNewton]: start training (iterations=100, train_frame=116, lr=0.001)
+2026-02-11 09:51:57,048 [   INFO] [TrainNewton]: iter=0 loss=0.000589 chamfer=0.000285 track=0.000304 spring_ke[min/mean/max]=nan/nan/nan ground_restitution=0.8335 ground_friction=1.9481
+2026-02-11 09:51:57,052 [   INFO] [TrainNewton]: Best model saved at epoch 0 (loss 0.0005890516717835967)
+2026-02-11 09:52:52,767 [   INFO] [TrainNewton]: iter=1 loss=0.000589 chamfer=0.000285 track=0.000304 spring_ke[min/mean/max]=nan/nan/nan ground_restitution=0.8335 ground_friction=1.9481
+2026-02-11 09:53:48,582 [   INFO] [TrainNewton]: iter=2 loss=0.000589 chamfer=0.000285 track=0.000304 spring_ke[min/mean/max]=nan/nan/nan ground_restitution=0.8335 ground_friction=1.9481
+2026-02-11 09:54:45,023 [   INFO] [TrainNewton]: iter=3 loss=0.000589 chamfer=0.000285 track=0.000304 spring_ke[min/mean/max]=nan/nan/nan ground_restitution=0.8335 ground_friction=1.9481
+2026-02-11 09:55:06,728 [   INFO] [DATA]: loading data from phystwin/data/double_lift_cloth_1/final_data.pkl
+2026-02-11 09:55:07,262 [   INFO] [Mapping]: springs total=41606 object=39686 controller=1920 (controller_scale=100.0)
+2026-02-11 09:55:07,264 [   INFO] [SIMULATION]: Initialize the Newton spring-mass system
+2026-02-11 09:55:07,279 [   INFO] [Control]: mode=force links=1920 ke=5e+04 kd=100
+2026-02-11 09:55:07,407 [   INFO] [Mapping]: spring_ke->spring_stiffness, spring_kd->spring_damping, ground_restitution/friction->ground contact, particle_restitution/friction->particle contact.
+2026-02-11 09:55:07,407 [   INFO] [Mapping Init]: spring_ke=9.67e+04 spring_kd=190 linear_drag=11.5 ground_restitution=0.834 ground_friction=1.95 particle_restitution=0.249 particle_friction=1.69 controller_spring_scale=100.0
+2026-02-11 09:55:07,407 [WARNING] [TrainNewton]: collision_learn is enabled, but Newton built-in contact uses scalar parameters (non-differentiable). ground_restitution/friction will remain fixed.
+2026-02-11 09:55:07,733 [   INFO] [TrainNewton]: start training (iterations=100, train_frame=116, lr=0.001)
+2026-02-11 09:56:04,343 [   INFO] [TrainNewton]: iter=0 loss=0.000589 chamfer=0.000285 track=0.000304 spring_ke[min/mean/max]=nan/nan/nan ground_restitution=0.8335 ground_friction=1.9481
+2026-02-11 09:56:04,345 [   INFO] [TrainNewton]: Best model saved at epoch 0 (loss 0.0005890516092973564)
+2026-02-11 09:56:30,216 [   INFO] [DATA]: loading data from phystwin/data/double_lift_cloth_1/final_data.pkl
+2026-02-11 09:56:30,758 [   INFO] [Mapping]: springs total=41606 object=39686 controller=1920 (controller_scale=100.0)
+2026-02-11 09:56:30,759 [   INFO] [SIMULATION]: Initialize the Newton spring-mass system
+2026-02-11 09:56:30,775 [   INFO] [Control]: mode=force links=1920 ke=5e+10 kd=100
+2026-02-11 09:56:30,904 [   INFO] [Mapping]: spring_ke->spring_stiffness, spring_kd->spring_damping, ground_restitution/friction->ground contact, particle_restitution/friction->particle contact.
+2026-02-11 09:56:30,904 [   INFO] [Mapping Init]: spring_ke=9.67e+04 spring_kd=190 linear_drag=11.5 ground_restitution=0.834 ground_friction=1.95 particle_restitution=0.249 particle_friction=1.69 controller_spring_scale=100.0
+2026-02-11 09:56:30,904 [WARNING] [TrainNewton]: collision_learn is enabled, but Newton built-in contact uses scalar parameters (non-differentiable). ground_restitution/friction will remain fixed.
+2026-02-11 09:56:31,229 [   INFO] [TrainNewton]: start training (iterations=100, train_frame=116, lr=0.001)
+2026-02-11 09:57:27,736 [   INFO] [TrainNewton]: iter=0 loss=0.000589 chamfer=0.000285 track=0.000304 spring_ke[min/mean/max]=nan/nan/nan ground_restitution=0.8335 ground_friction=1.9481
+2026-02-11 09:57:27,738 [   INFO] [TrainNewton]: Best model saved at epoch 0 (loss 0.0005890516864145985)
+2026-02-11 09:58:25,263 [   INFO] [TrainNewton]: iter=1 loss=0.000589 chamfer=0.000285 track=0.000304 spring_ke[min/mean/max]=nan/nan/nan ground_restitution=0.8335 ground_friction=1.9481
+2026-02-11 09:59:21,311 [   INFO] [TrainNewton]: iter=2 loss=0.000589 chamfer=0.000285 track=0.000304 spring_ke[min/mean/max]=nan/nan/nan ground_restitution=0.8335 ground_friction=1.9481
+2026-02-11 10:00:19,811 [   INFO] [TrainNewton]: iter=3 loss=0.000589 chamfer=0.000285 track=0.000304 spring_ke[min/mean/max]=nan/nan/nan ground_restitution=0.8335 ground_friction=1.9481
+2026-02-11 10:00:53,288 [   INFO] [DATA]: loading data from phystwin/data/double_lift_cloth_1/final_data.pkl
+2026-02-11 10:00:53,830 [   INFO] [Mapping]: springs total=41606 object=39686 controller=1920 (controller_scale=100.0)
+2026-02-11 10:00:53,832 [   INFO] [SIMULATION]: Initialize the Newton spring-mass system
+2026-02-11 10:00:53,918 [   INFO] [Control]: disabled model controller springs in force mode (1920)
+2026-02-11 10:00:53,918 [   INFO] [Control]: mode=force links=1920 ke=5e+10 kd=100
+2026-02-11 10:00:54,054 [   INFO] [Mapping]: spring_ke->spring_stiffness, spring_kd->spring_damping, ground_restitution/friction->ground contact, particle_restitution/friction->particle contact.
+2026-02-11 10:00:54,054 [   INFO] [Mapping Init]: spring_ke=9.67e+04 spring_kd=190 linear_drag=11.5 ground_restitution=0.834 ground_friction=1.95 particle_restitution=0.249 particle_friction=1.69 controller_spring_scale=100.0
+2026-02-11 10:00:54,054 [WARNING] [TrainNewton]: collision_learn is enabled, but Newton built-in contact uses scalar parameters (non-differentiable). ground_restitution/friction will remain fixed.
+2026-02-11 10:00:54,383 [   INFO] [TrainNewton]: start training (iterations=100, train_frame=116, lr=0.001)
+2026-02-11 10:01:51,044 [   INFO] [TrainNewton]: iter=0 loss=0.000589 chamfer=0.000285 track=0.000304 spring_ke[min/mean/max]=nan/nan/nan ground_restitution=0.8335 ground_friction=1.9481
+2026-02-11 10:01:51,046 [   INFO] [TrainNewton]: Best model saved at epoch 0 (loss 0.0005890515604377193)
+2026-02-11 10:02:48,937 [   INFO] [TrainNewton]: iter=1 loss=0.000589 chamfer=0.000285 track=0.000304 spring_ke[min/mean/max]=nan/nan/nan ground_restitution=0.8335 ground_friction=1.9481
+2026-02-11 10:03:47,990 [   INFO] [TrainNewton]: iter=2 loss=0.000589 chamfer=0.000285 track=0.000304 spring_ke[min/mean/max]=nan/nan/nan ground_restitution=0.8335 ground_friction=1.9481
+2026-02-11 10:04:46,407 [   INFO] [TrainNewton]: iter=3 loss=0.000589 chamfer=0.000285 track=0.000304 spring_ke[min/mean/max]=nan/nan/nan ground_restitution=0.8335 ground_friction=1.9481
+2026-02-11 10:05:45,282 [   INFO] [TrainNewton]: iter=4 loss=0.000589 chamfer=0.000285 track=0.000304 spring_ke[min/mean/max]=nan/nan/nan ground_restitution=0.8335 ground_friction=1.9481
+2026-02-11 10:06:45,585 [   INFO] [TrainNewton]: iter=5 loss=0.000589 chamfer=0.000285 track=0.000304 spring_ke[min/mean/max]=nan/nan/nan ground_restitution=0.8335 ground_friction=1.9481
+2026-02-11 10:07:42,747 [   INFO] [TrainNewton]: iter=6 loss=0.000589 chamfer=0.000285 track=0.000304 spring_ke[min/mean/max]=nan/nan/nan ground_restitution=0.8335 ground_friction=1.9481
+2026-02-11 10:08:39,006 [   INFO] [TrainNewton]: iter=7 loss=0.000589 chamfer=0.000285 track=0.000304 spring_ke[min/mean/max]=nan/nan/nan ground_restitution=0.8335 ground_friction=1.9481
+2026-02-11 10:09:35,315 [   INFO] [TrainNewton]: iter=8 loss=0.000589 chamfer=0.000285 track=0.000304 spring_ke[min/mean/max]=nan/nan/nan ground_restitution=0.8335 ground_friction=1.9481
+2026-02-11 10:10:12,619 [   INFO] [DATA]: loading data from phystwin/data/double_lift_cloth_1/final_data.pkl
+2026-02-11 10:10:13,147 [   INFO] [Mapping]: springs total=41606 object=39686 controller=1920 (controller_scale=100.0)
+2026-02-11 10:10:13,148 [   INFO] [SIMULATION]: Initialize the Newton spring-mass system
+2026-02-11 10:10:13,165 [   INFO] [Control]: mode=pin links=1920 pinned=183 ke=5e+10 kd=100 zero_rest=true
+2026-02-11 10:10:14,294 [   INFO] [Mapping]: spring_ke->spring_stiffness, spring_kd->spring_damping, ground_restitution/friction->ground contact, particle_restitution/friction->particle contact.
+2026-02-11 10:10:14,294 [   INFO] [Mapping Init]: spring_ke=9.67e+04 spring_kd=190 linear_drag=11.5 ground_restitution=0.834 ground_friction=1.95 particle_restitution=0.249 particle_friction=1.69 controller_spring_scale=100.0
+2026-02-11 10:10:14,294 [WARNING] [TrainNewton]: collision_learn is enabled, but Newton built-in contact uses scalar parameters (non-differentiable). ground_restitution/friction will remain fixed.
+2026-02-11 10:10:14,615 [   INFO] [TrainNewton]: start training (iterations=100, train_frame=116, lr=0.001)
+2026-02-11 10:11:11,681 [   INFO] [TrainNewton]: iter=0 loss=0.000563 chamfer=0.000245 track=0.000318 spring_ke[min/mean/max]=nan/nan/nan ground_restitution=0.8335 ground_friction=1.9481
+2026-02-11 10:11:11,683 [   INFO] [TrainNewton]: Best model saved at epoch 0 (loss 0.0005627633165441575)
+2026-02-11 10:12:08,284 [   INFO] [TrainNewton]: iter=1 loss=0.000563 chamfer=0.000245 track=0.000318 spring_ke[min/mean/max]=nan/nan/nan ground_restitution=0.8335 ground_friction=1.9481
+2026-02-11 10:13:04,702 [   INFO] [TrainNewton]: iter=2 loss=0.000563 chamfer=0.000245 track=0.000318 spring_ke[min/mean/max]=nan/nan/nan ground_restitution=0.8335 ground_friction=1.9481
+2026-02-11 10:14:01,139 [   INFO] [TrainNewton]: iter=3 loss=0.000563 chamfer=0.000245 track=0.000318 spring_ke[min/mean/max]=nan/nan/nan ground_restitution=0.8335 ground_friction=1.9481
+2026-02-11 10:14:59,084 [   INFO] [TrainNewton]: iter=4 loss=0.000563 chamfer=0.000245 track=0.000318 spring_ke[min/mean/max]=nan/nan/nan ground_restitution=0.8335 ground_friction=1.9481
+2026-02-11 10:15:58,780 [   INFO] [TrainNewton]: iter=5 loss=0.000563 chamfer=0.000245 track=0.000318 spring_ke[min/mean/max]=nan/nan/nan ground_restitution=0.8335 ground_friction=1.9481
+2026-02-11 10:16:57,737 [   INFO] [TrainNewton]: iter=6 loss=0.000563 chamfer=0.000245 track=0.000318 spring_ke[min/mean/max]=nan/nan/nan ground_restitution=0.8335 ground_friction=1.9481
+2026-02-11 10:17:24,081 [   INFO] [DATA]: loading data from phystwin/data/double_lift_cloth_1/final_data.pkl
+2026-02-11 10:17:24,610 [   INFO] [Mapping]: springs total=41606 object=39686 controller=1920 (controller_scale=100.0)
+2026-02-11 10:17:24,612 [   INFO] [SIMULATION]: Initialize the Newton spring-mass system
+2026-02-11 10:17:24,628 [   INFO] [Control]: mode=pin links=1920 pinned=183 ke=5e+10 kd=100 zero_rest=true
+2026-02-11 10:17:24,757 [   INFO] [Mapping]: spring_ke->spring_stiffness, spring_kd->spring_damping, ground_restitution/friction->ground contact, particle_restitution/friction->particle contact.
+2026-02-11 10:17:24,757 [   INFO] [Mapping Init]: spring_ke=9.67e+04 spring_kd=190 linear_drag=11.5 ground_restitution=0.834 ground_friction=1.95 particle_restitution=0.249 particle_friction=1.69 controller_spring_scale=100.0
+2026-02-11 10:17:24,757 [WARNING] [TrainNewton]: collision_learn is enabled, but Newton built-in contact uses scalar parameters (non-differentiable). ground_restitution/friction will remain fixed.
+2026-02-11 10:17:25,089 [   INFO] [TrainNewton]: start training (iterations=100, train_frame=116, lr=0.001)
+2026-02-11 10:18:22,918 [   INFO] [TrainNewton]: iter=0 loss=0.000563 chamfer=0.000245 track=0.000318 spring_ke[min/mean/max]=9.67e+04/9.67e+04/9.67e+04 ground_restitution=0.8335 ground_friction=1.9481 pin_err=0
+2026-02-11 10:18:22,921 [   INFO] [TrainNewton]: Best model saved at epoch 0 (loss 0.0005627633090783923)
+2026-02-11 10:19:19,294 [   INFO] [TrainNewton]: iter=1 loss=0.000563 chamfer=0.000245 track=0.000318 spring_ke[min/mean/max]=9.67e+04/9.67e+04/9.67e+04 ground_restitution=0.8335 ground_friction=1.9481 pin_err=0
+2026-02-11 10:20:16,212 [   INFO] [TrainNewton]: iter=2 loss=0.000563 chamfer=0.000245 track=0.000318 spring_ke[min/mean/max]=9.67e+04/9.67e+04/9.67e+04 ground_restitution=0.8335 ground_friction=1.9481 pin_err=0

@@ -50,6 +50,10 @@ def eval_spring(
     vij = vi - vj
 
     l = wp.length(xij)
+    # Guard against zero-length springs to avoid NaNs in gradients.
+    eps = wp.static(1.0e-6)
+    if l < eps:
+        return
     l_inv = 1.0 / l
 
     # normalized spring direction
