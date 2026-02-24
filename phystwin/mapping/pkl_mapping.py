@@ -261,6 +261,7 @@ def map_pkl_to_newton(
     object_max_neighbours: int | None = None,
     controller_radius: float | None = None,
     controller_max_neighbours: int | None = None,
+    builder: newton.ModelBuilder | None = None,
 ) -> MappingPklToNewton:
     """Map PKL frame data onto a Newton model and return index mappings.
 
@@ -335,7 +336,8 @@ def map_pkl_to_newton(
 
     velocities = np.zeros_like(object_points, dtype=np.float32)
 
-    builder = newton.ModelBuilder()
+    if builder is None:
+        builder = newton.ModelBuilder()
     if add_ground:
         builder.add_ground_plane()
 

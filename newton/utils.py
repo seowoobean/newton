@@ -110,6 +110,10 @@ from ._src.math import (  # noqa: E402
     vec_min,
 )
 from ._src.utils import compute_world_offsets  # noqa: E402
+from ._src.utils.recorder import (  # noqa: E402
+    RecorderBasic,
+    RecorderModelAndState,
+)
 
 __all__ += [
     "boltzmann",
@@ -125,6 +129,14 @@ __all__ += [
     "vec_leaky_min",
     "vec_max",
     "vec_min",
+]
+
+# ==================================================================================
+# recorder utils
+# ==================================================================================
+__all__ += [
+    "RecorderBasic",
+    "RecorderModelAndState",
 ]
 
 # ==================================================================================
