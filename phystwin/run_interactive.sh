@@ -6,10 +6,13 @@ PKL="phystwin/experiments/${CASE_NAME}/train/model.pkl"
 URDF="newton/examples/ai_worker/ai_worker.urdf"
 
 # Simulation integration / timing
-ARGS_SIM="--substeps 150"
+ARGS_SIM="--substeps 30"
 
 # Spring-vs-robot contact response tuning
-ARGS_CONTACT="--spring-soft-contact-ke 9.0e4 --spring-soft-contact-kd 1.0e3 --spring-soft-contact-kf 5.0e7 --spring-soft-contact-margin 0.01"
+ARGS_CONTACT="--spring-soft-contact-ke 1.0e4 --spring-soft-contact-kd 1.0e2 --spring-soft-contact-kf 5.0e3 --spring-soft-contact-margin 0.01"
+
+# Constraint-based grasp patch (normal non-penetration + tangential stick/slip)
+ARGS_PATCH="--enable-contact-patch --contact-patch-arm right --contact-patch-max-particles 128 --contact-patch-min-contacts 8 --contact-patch-normal-ke 1.5e5 --contact-patch-normal-kd 2.5e3 --contact-patch-tangent-ke 8.0e4 --contact-patch-tangent-kd 1.2e3 --contact-patch-mu 3.0 --contact-patch-max-force 5.0e3 --contact-patch-break-distance 0.045 --contact-patch-release-missed-steps 15 --contact-patch-refresh-interval 10"
 
 # Robot joint hold gains
 ARGS_ROBOT_PD="--robot-joint-ke 1.0e6 --robot-joint-kd 1.0e3"
@@ -21,7 +24,7 @@ ARGS_ROBOT_POSE="--robot-pose-preset forward_reach"
 ARGS_ARM="--active-arm right --lift-joint 0.0 --arm-j1 -1.570796 --arm-j2 -0.174533 --arm-j3 -0.872665 --arm-j4 0.552665 --arm-j5 0.523599 --arm-j6 1.047198 --arm-j7 1.047198 --print-arm-joint-ranges"
 
 # Right gripper auto-close sequence
-ARGS_GRIPPER="--auto-close-right-gripper --gripper-close-start-time 0.5 --gripper-close-duration 2.0 --gripper-close-target 0.87 --auto-sweep-arm-j1-after-grip --arm-j1-sweep-target -3.0 --arm-j1-sweep-duration 15.0"
+ARGS_GRIPPER="--auto-close-right-gripper --gripper-close-start-time 0.5 --gripper-close-duration 0.5 --gripper-close-target 0.87 --auto-sweep-arm-j1-after-grip --arm-j1-sweep-target -3.0 --arm-j1-sweep-duration 5.0"
 
 # Spring-mass placement
 ARGS_SPRING="--spring-offset -0.095 0.08 0.0 --particle-mass-override 1.0"
@@ -36,7 +39,7 @@ ARGS_TABLE="--table-center-x 0.15 --table-center-y 0.0 --table-center-z 0.6 --ta
 ARGS_INTERACTIVE="--enable-controller-drag"
 
 # Compose all optional args
-EXTRA_ARGS="${ARGS_SIM} ${ARGS_CONTACT} ${ARGS_ROBOT_PD} ${ARGS_ROBOT_POSE} ${ARGS_ARM} ${ARGS_GRIPPER} ${ARGS_SPRING} ${ARGS_SCENE} ${ARGS_TABLE} ${ARGS_INTERACTIVE}"
+EXTRA_ARGS="${ARGS_SIM} ${ARGS_CONTACT} ${ARGS_PATCH} ${ARGS_ROBOT_PD} ${ARGS_ROBOT_POSE} ${ARGS_ARM} ${ARGS_GRIPPER} ${ARGS_SPRING} ${ARGS_SCENE} ${ARGS_TABLE} ${ARGS_INTERACTIVE}"
 
 AI_WORKER_ROOT="/home/roro/git/ai_worker"
 FFW_DESC="${AI_WORKER_ROOT}/ffw_description"
