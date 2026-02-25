@@ -130,6 +130,59 @@ def gather_patch_contact_candidates_kernel(
 
 
 @wp.kernel
+def filter_patch_contact_candidates_by_touch_kernel(
+    candidate_particle: wp.array(dtype=int),
+    candidate_shape: wp.array(dtype=int),
+    candidate_body_pos: wp.array(dtype=wp.vec3),
+    candidate_normal: wp.array(dtype=wp.vec3),
+    shape_body_indices: wp.array(dtype=wp.int32),
+    particle_q: wp.array(dtype=wp.vec3),
+    body_q: wp.array(dtype=wp.transform),
+    particle_radius: wp.array(dtype=float),
+    max_gap: float,
+    max_filtered: int,
+    filtered_count: wp.array(dtype=wp.int32),
+    filtered_particle: wp.array(dtype=int),
+    filtered_shape: wp.array(dtype=int),
+    filtered_normal: wp.array(dtype=wp.vec3),
+):
+    tid = wp.tid()
+    particle_idx = candidate_particle[tid]
+    shape_idx = candidate_shape[tid]
+    if particle_idx < 0 or shape_idx < 0:
+        return
+    if particle_idx >= particle_q.shape[0] or particle_idx >= particle_radius.shape[0]:
+        return
+    if shape_idx >= shape_body_indices.shape[0]:
+        return
+
+    body_idx = shape_body_indices[shape_idx]
+    if body_idx < 0 or body_idx >= body_q.shape[0]:
+        return
+
+    n_world = candidate_normal[tid]
+    n_len = wp.length(n_world)
+    if n_len <= 1.0e-8:
+        return
+    n_world = n_world / n_len
+
+    X_wb = body_q[body_idx]
+    particle_pos = particle_q[particle_idx]
+    contact_pos_world = wp.transform_point(X_wb, candidate_body_pos[tid])
+    center_gap = wp.dot(particle_pos - contact_pos_world, n_world)
+    surface_gap = center_gap - particle_radius[particle_idx]
+    if surface_gap > max_gap:
+        return
+
+    out_idx = wp.atomic_add(filtered_count, 0, 1)
+    if out_idx >= max_filtered:
+        return
+    filtered_particle[out_idx] = particle_idx
+    filtered_shape[out_idx] = shape_idx
+    filtered_normal[out_idx] = n_world
+
+
+@wp.kernel
 def apply_contact_patch_force_kernel(
     particle_q: wp.array(dtype=wp.vec3),
     particle_qd: wp.array(dtype=wp.vec3),
@@ -219,6 +272,32 @@ def eval_patch_break_mask_kernel(
         keep_mask[tid] = 1
     else:
         keep_mask[tid] = 0
+
+
+@wp.kernel
+def copy_indexed_transform_kernel(
+    src: wp.array(dtype=wp.transform),
+    dst: wp.array(dtype=wp.transform),
+    src_indices: wp.array(dtype=wp.int32),
+    dst_indices: wp.array(dtype=wp.int32),
+):
+    tid = wp.tid()
+    dst_idx = dst_indices[tid]
+    src_idx = src_indices[tid]
+    dst[dst_idx] = src[src_idx]
+
+
+@wp.kernel
+def copy_indexed_spatial_vector_kernel(
+    src: wp.array(dtype=wp.spatial_vector),
+    dst: wp.array(dtype=wp.spatial_vector),
+    src_indices: wp.array(dtype=wp.int32),
+    dst_indices: wp.array(dtype=wp.int32),
+):
+    tid = wp.tid()
+    dst_idx = dst_indices[tid]
+    src_idx = src_indices[tid]
+    dst[dst_idx] = src[src_idx]
 
 
 def _apply_scale(points: np.ndarray, scale: float, reverse_z: bool) -> np.ndarray:
@@ -594,7 +673,12 @@ class Example:
 
         self.fps = float(_pick_param_alias(pkl_params, args, ("fps", "FPS"), "fps"))
         self.frame_dt = 1.0 / self.fps
-        self.sim_substeps = int(_pick_param_alias(pkl_params, args, ("substeps", "num_substeps"), "substeps"))
+        if args.substeps is not None:
+            # CLI should override PKL-provided substeps when explicitly set.
+            self.sim_substeps = max(1, int(args.substeps))
+        else:
+            pkl_substeps = _pick_param_alias(pkl_params, args, ("substeps", "num_substeps"), "substeps")
+            self.sim_substeps = max(1, int(pkl_substeps)) if pkl_substeps is not None else 20
         self.sim_dt = self.frame_dt / self.sim_substeps
         self.sim_time = 0.0
 
@@ -855,9 +939,24 @@ class Example:
         self.mesh_enabled = bool(args.visualize_mesh)
         self.mesh_show_points = bool(args.mesh_show_points or not self.mesh_enabled)
         self.visual_z_offset = float(args.visual_z_offset)
-        self.object_radius_value = (
-            float(self.spring_model.particle_radius.numpy()[0])
+        self._spring_particle_radius_host = (
+            self.spring_model.particle_radius.numpy().copy()
             if self.spring_model.particle_radius is not None
+            else None
+        )
+        self._spring_particle_radius_wp = (
+            self.spring_model.particle_radius
+            if self.spring_model.particle_radius is not None
+            else wp.full(
+                self.spring_model.particle_count,
+                float(particle_radius),
+                dtype=float,
+                device=self.spring_model.device,
+            )
+        )
+        self.object_radius_value = (
+            float(self._spring_particle_radius_host[0])
+            if self._spring_particle_radius_host is not None
             else particle_radius
         )
         self.mesh_indices_wp = None
@@ -878,6 +977,10 @@ class Example:
         self.gripper_close_start_time = float(args.gripper_close_start_time)
         self.gripper_close_duration = max(float(args.gripper_close_duration), 1.0e-6)
         self.gripper_close_target = float(np.clip(args.gripper_close_target, 0.0, 1.0))
+        self._robot_joint_target_pos_host = self.robot_control.joint_target_pos.numpy().copy()
+        self._robot_joint_target_pos_dirty = False
+        self._last_gripper_alpha: float | None = None
+        self._last_arm_j1_alpha: float | None = None
         self._right_gripper_q_indices: np.ndarray | None = None
         self._right_gripper_open_targets: np.ndarray | None = None
         self._right_gripper_close_targets: np.ndarray | None = None
@@ -940,10 +1043,12 @@ class Example:
             return
         alpha = (current_time - self.gripper_close_start_time) / self.gripper_close_duration
         alpha = float(np.clip(alpha, 0.0, 1.0))
+        if self._last_gripper_alpha is not None and abs(alpha - self._last_gripper_alpha) <= 1.0e-6:
+            return
         targets = (1.0 - alpha) * self._right_gripper_open_targets + alpha * self._right_gripper_close_targets
-        target_pos = self.robot_control.joint_target_pos.numpy()
-        target_pos[self._right_gripper_q_indices] = targets
-        self.robot_control.joint_target_pos.assign(target_pos)
+        self._robot_joint_target_pos_host[self._right_gripper_q_indices] = targets
+        self._robot_joint_target_pos_dirty = True
+        self._last_gripper_alpha = alpha
 
     def _update_post_grip_arm_j1_sweep(self, current_time: float) -> None:
         if not self.auto_sweep_arm_j1_after_grip:
@@ -956,10 +1061,12 @@ class Example:
             return
         alpha = (current_time - self._arm_j1_sweep_start_time) / self.arm_j1_sweep_duration
         alpha = float(np.clip(alpha, 0.0, 1.0))
+        if self._last_arm_j1_alpha is not None and abs(alpha - self._last_arm_j1_alpha) <= 1.0e-6:
+            return
         value = (1.0 - alpha) * self._arm_j1_start_target + alpha * self._arm_j1_sweep_clamped_target
-        target_pos = self.robot_control.joint_target_pos.numpy()
-        target_pos[self._arm_j1_q_index] = value
-        self.robot_control.joint_target_pos.assign(target_pos)
+        self._robot_joint_target_pos_host[self._arm_j1_q_index] = value
+        self._robot_joint_target_pos_dirty = True
+        self._last_arm_j1_alpha = alpha
 
     def _init_contact_patch(self, args: argparse.Namespace) -> None:
         self.contact_patch_enabled = bool(args.enable_contact_patch)
@@ -989,6 +1096,7 @@ class Example:
         self._patch_shape_mask = None
         self._patch_shape_mask_wp = None
         self._shape_body_indices = None
+        self._shape_body_indices_wp = None
         self._patch_particles_wp = None
         self._patch_body_indices_wp = None
         self._patch_anchor_local_wp = None
@@ -1018,8 +1126,31 @@ class Example:
             dtype=wp.vec3,
             device=self.spring_model.device,
         )
+        self._patch_filtered_count_wp = wp.zeros(1, dtype=wp.int32, device=self.spring_model.device)
+        self._patch_filtered_particle_wp = wp.full(
+            self._patch_candidate_capacity,
+            -1,
+            dtype=wp.int32,
+            device=self.spring_model.device,
+        )
+        self._patch_filtered_shape_wp = wp.full(
+            self._patch_candidate_capacity,
+            -1,
+            dtype=wp.int32,
+            device=self.spring_model.device,
+        )
+        self._patch_filtered_normal_wp = wp.zeros(
+            self._patch_candidate_capacity,
+            dtype=wp.vec3,
+            device=self.spring_model.device,
+        )
         if self.spring_model.shape_body is not None and self.spring_model.shape_count > 0:
             self._shape_body_indices = self.spring_model.shape_body.numpy().astype(np.int32, copy=True)
+            self._shape_body_indices_wp = wp.array(
+                self._shape_body_indices.tolist(),
+                dtype=wp.int32,
+                device=self.spring_model.device,
+            )
         if not self.contact_patch_enabled:
             return
         if self._shape_body_indices is None:
@@ -1107,7 +1238,7 @@ class Example:
             return (
                 np.zeros(0, dtype=np.int32),
                 np.zeros(0, dtype=np.int32),
-                np.zeros((0, 3), dtype=np.float32),
+                np.zeros(0, dtype=np.int32),
                 np.zeros((0, 3), dtype=np.float32),
             )
 
@@ -1117,7 +1248,7 @@ class Example:
             return (
                 np.zeros(0, dtype=np.int32),
                 np.zeros(0, dtype=np.int32),
-                np.zeros((0, 3), dtype=np.float32),
+                np.zeros(0, dtype=np.int32),
                 np.zeros((0, 3), dtype=np.float32),
             )
 
@@ -1148,15 +1279,55 @@ class Example:
             return (
                 np.zeros(0, dtype=np.int32),
                 np.zeros(0, dtype=np.int32),
+                np.zeros(0, dtype=np.int32),
                 np.zeros((0, 3), dtype=np.float32),
+            )
+        seen_particles = self._patch_candidate_particle_wp.numpy()[:candidate_count].astype(np.int32, copy=True)
+        if self._shape_body_indices_wp is None:
+            return (
+                seen_particles,
+                np.zeros(0, dtype=np.int32),
+                np.zeros(0, dtype=np.int32),
                 np.zeros((0, 3), dtype=np.float32),
             )
 
-        particle_np = self._patch_candidate_particle_wp.numpy()[:candidate_count].astype(np.int32, copy=False)
-        shape_np = self._patch_candidate_shape_wp.numpy()[:candidate_count].astype(np.int32, copy=False)
-        body_pos_np = self._patch_candidate_body_pos_wp.numpy()[:candidate_count].astype(np.float32, copy=False)
-        normal_np = self._patch_candidate_normal_wp.numpy()[:candidate_count].astype(np.float32, copy=False)
-        return particle_np, shape_np, body_pos_np, normal_np
+        self._patch_filtered_count_wp.zero_()
+        wp.launch(
+            filter_patch_contact_candidates_by_touch_kernel,
+            dim=candidate_count,
+            inputs=[
+                self._patch_candidate_particle_wp,
+                self._patch_candidate_shape_wp,
+                self._patch_candidate_body_pos_wp,
+                self._patch_candidate_normal_wp,
+                self._shape_body_indices_wp,
+                self.spring_state_0.particle_q,
+                self.spring_state_0.body_q,
+                self._spring_particle_radius_wp,
+                self.contact_patch_max_gap,
+                self._patch_candidate_capacity,
+                self._patch_filtered_count_wp,
+                self._patch_filtered_particle_wp,
+                self._patch_filtered_shape_wp,
+                self._patch_filtered_normal_wp,
+            ],
+            device=self.spring_model.device,
+        )
+
+        filtered_count = int(self._patch_filtered_count_wp.numpy()[0])
+        filtered_count = min(filtered_count, self._patch_candidate_capacity)
+        if filtered_count <= 0:
+            return (
+                seen_particles,
+                np.zeros(0, dtype=np.int32),
+                np.zeros(0, dtype=np.int32),
+                np.zeros((0, 3), dtype=np.float32),
+            )
+
+        acquire_particles = self._patch_filtered_particle_wp.numpy()[:filtered_count].astype(np.int32, copy=False)
+        acquire_shapes = self._patch_filtered_shape_wp.numpy()[:filtered_count].astype(np.int32, copy=False)
+        acquire_normals = self._patch_filtered_normal_wp.numpy()[:filtered_count].astype(np.float32, copy=False)
+        return seen_particles, acquire_particles, acquire_shapes, acquire_normals
 
     def _append_patch_anchor(
         self,
@@ -1199,46 +1370,8 @@ class Example:
             return
         if self._patch_shape_mask is None or self._shape_body_indices is None:
             return
-        valid_particles, valid_shapes, valid_body_pos, valid_normals = self._gather_patch_contact_candidates()
+        seen_particles, acquire_particles, acquire_shapes, acquire_normals = self._gather_patch_contact_candidates()
         patch_changed = False
-        seen_particles = valid_particles
-
-        # Require actual touch (or penetration) for patch acquisition to avoid
-        # enabling stick constraints from margin-only proximity.
-        acquire_particles = valid_particles
-        acquire_shapes = valid_shapes
-        acquire_normals = valid_normals
-        if valid_particles.size > 0:
-            q_particle = self.spring_state_0.particle_q.numpy()
-            q_body = self.spring_state_0.body_q.numpy()
-            radii = self.spring_model.particle_radius.numpy() if self.spring_model.particle_radius is not None else None
-            keep_touch = np.zeros(valid_particles.shape[0], dtype=bool)
-            for i in range(valid_particles.shape[0]):
-                pidx = int(valid_particles[i])
-                sidx = int(valid_shapes[i])
-                if sidx < 0 or sidx >= self._shape_body_indices.shape[0]:
-                    continue
-                body_idx = int(self._shape_body_indices[sidx])
-                if body_idx < 0 or body_idx >= q_body.shape[0]:
-                    continue
-
-                particle_pos = q_particle[pidx, :3].astype(np.float32, copy=False)
-                body_pos = q_body[body_idx, :3].astype(np.float32, copy=False)
-                body_quat = q_body[body_idx, 3:7].astype(np.float32, copy=False)
-                contact_pos_local = valid_body_pos[i].astype(np.float32, copy=False)
-                contact_pos_world = body_pos + _quat_rotate_np(body_quat, contact_pos_local)
-                n_world = _normalize_np(valid_normals[i])
-                if float(np.linalg.norm(n_world)) <= 1.0e-8:
-                    continue
-
-                center_gap = float(np.dot(particle_pos - contact_pos_world, n_world))
-                radius = float(radii[pidx]) if radii is not None and pidx < radii.shape[0] else 0.0
-                surface_gap = center_gap - radius
-                keep_touch[i] = surface_gap <= self.contact_patch_max_gap
-
-            acquire_particles = valid_particles[keep_touch]
-            acquire_shapes = valid_shapes[keep_touch]
-            acquire_normals = valid_normals[keep_touch]
 
         if self._patch_particles.size > 0:
             if seen_particles.size > 0:
@@ -1384,24 +1517,53 @@ class Example:
             else:
                 LOGGER.warning("No overlapping body identifiers found between robot and spring collider models.")
 
+        self._robot_to_spring_robot_body_idx_wp = None
+        self._robot_to_spring_spring_body_idx_wp = None
+        if self._robot_to_spring_robot_body_idx.size > 0:
+            self._robot_to_spring_robot_body_idx_wp = wp.array(
+                self._robot_to_spring_robot_body_idx.tolist(),
+                dtype=wp.int32,
+                device=self.spring_model.device,
+            )
+            self._robot_to_spring_spring_body_idx_wp = wp.array(
+                self._robot_to_spring_spring_body_idx.tolist(),
+                dtype=wp.int32,
+                device=self.spring_model.device,
+            )
+
     def _sync_robot_to_spring_colliders(self) -> None:
         """Copy robot body transforms/velocities into spring-model kinematic colliders."""
         if self._robot_to_spring_robot_body_idx.size == 0:
             return
 
-        r_idx = self._robot_to_spring_robot_body_idx
-        s_idx = self._robot_to_spring_spring_body_idx
+        if self._robot_to_spring_robot_body_idx_wp is None or self._robot_to_spring_spring_body_idx_wp is None:
+            return
+        count = int(self._robot_to_spring_robot_body_idx.size)
+        if count <= 0:
+            return
 
-        robot_q = self.robot_state_0.body_q.numpy()
-        robot_qd = self.robot_state_0.body_qd.numpy()
-        spring_q = self.spring_state_0.body_q.numpy()
-        spring_qd = self.spring_state_0.body_qd.numpy()
-
-        spring_q[s_idx] = robot_q[r_idx]
-        spring_qd[s_idx] = robot_qd[r_idx]
-
-        self.spring_state_0.body_q.assign(spring_q)
-        self.spring_state_0.body_qd.assign(spring_qd)
+        wp.launch(
+            copy_indexed_transform_kernel,
+            dim=count,
+            inputs=[
+                self.robot_state_0.body_q,
+                self.spring_state_0.body_q,
+                self._robot_to_spring_robot_body_idx_wp,
+                self._robot_to_spring_spring_body_idx_wp,
+            ],
+            device=self.spring_model.device,
+        )
+        wp.launch(
+            copy_indexed_spatial_vector_kernel,
+            dim=count,
+            inputs=[
+                self.robot_state_0.body_qd,
+                self.spring_state_0.body_qd,
+                self._robot_to_spring_robot_body_idx_wp,
+                self._robot_to_spring_spring_body_idx_wp,
+            ],
+            device=self.spring_model.device,
+        )
 
     def _init_spring_mesh(self, args: argparse.Namespace) -> None:
         if not self.mesh_enabled:
@@ -1635,8 +1797,11 @@ class Example:
             self.robot_state_0.clear_forces()
             self.viewer.apply_forces(self.robot_state_0)
             current_time = self.sim_time + substep_idx * self.sim_dt
+            self._robot_joint_target_pos_dirty = False
             self._update_right_gripper_autoclose(current_time)
             self._update_post_grip_arm_j1_sweep(current_time)
+            if self._robot_joint_target_pos_dirty:
+                self.robot_control.joint_target_pos.assign(self._robot_joint_target_pos_host)
             if self.robot_collisions_enabled:
                 self.robot_contacts = self.robot_model.collide(
                     self.robot_state_0, collision_pipeline=self.robot_collision_pipeline
@@ -1737,7 +1902,12 @@ def main() -> None:
     parser = newton.examples.create_parser()
     parser.add_argument("--pkl", type=str, required=True, help="Path to spring-mass PKL file.")
     parser.add_argument("--urdf", type=str, required=True, help="Path to robot URDF file.")
-    parser.add_argument("--substeps", type=int, default=20, help="Simulation substeps.")
+    parser.add_argument(
+        "--substeps",
+        type=int,
+        default=None,
+        help="Simulation substeps (overrides PKL substeps when set).",
+    )
     parser.add_argument(
         "--spring-soft-contact-ke",
         type=float,

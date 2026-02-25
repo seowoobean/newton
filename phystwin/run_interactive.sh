@@ -6,7 +6,7 @@ PKL="phystwin/experiments/${CASE_NAME}/train/model.pkl"
 URDF="newton/examples/ai_worker/ai_worker.urdf"
 
 # Simulation integration / timing
-ARGS_SIM="--substeps 30"
+ARGS_SIM="--substeps 60"
 
 # MuJoCo converted-contact capacity (raise to avoid nconmax/njmax overflow warnings)
 ARGS_MUJOCO="--mujoco-nconmax 4096 --mujoco-njmax 32768"
