@@ -16,6 +16,37 @@ if __package__ in (None, ""):
 from phystwin.mapping.pkl_mapping import SpringMassPKL, SpringMassPKLPair, load_pkl
 
 
+INTERACTIVE_PARAM_KEYS = {
+    "fps",
+    "FPS",
+    "substeps",
+    "num_substeps",
+    "scale",
+    "z_offset",
+    "reverse_z",
+    "particle_radius",
+    "mass",
+    "particle_mass",
+    "spring_ke",
+    "init_spring_Y",
+    "spring_kd",
+    "dashpot_damping",
+    "k_neighbors",
+    "object_max_neighbours",
+    "use_controllers",
+    "controller_k",
+    "controller_ke",
+    "controller_kd",
+    "controller_mass",
+    "filter_visibility",
+    "filter_motion_valid",
+    "spring_neighbor_mode",
+    "object_radius",
+    "spring_stiffness",
+    "spring_damping",
+}
+
+
 def _load_config(path: str | None) -> dict:
     if not path:
         return {}
@@ -69,6 +100,17 @@ def _apply_param_overrides(config: dict, params: dict | None, keys: tuple[str, .
             continue
         if np.isscalar(value):
             config[key] = value
+
+
+def _keep_first_frame(points: np.ndarray, nframes: int) -> np.ndarray:
+    arr = np.asarray(points)
+    if arr.ndim >= 1 and arr.shape[0] == nframes:
+        return arr[:1].copy()
+    return arr
+
+
+def _filter_params_for_interactive(params: dict) -> dict:
+    return {k: v for k, v in params.items() if k in INTERACTIVE_PARAM_KEYS and v is not None}
 
 
 def main() -> None:
@@ -155,12 +197,25 @@ def main() -> None:
             interior_points=_transform(export_data.interior_points),
         )
 
+    nframes = int(export_data.object_points.shape[0]) if np.asarray(export_data.object_points).ndim >= 1 else 1
+    export_data = SpringMassPKL(
+        controller_mask=np.asarray(export_data.controller_mask),
+        controller_points=_keep_first_frame(export_data.controller_points, nframes),
+        object_points=_keep_first_frame(export_data.object_points, nframes),
+        object_colors=_keep_first_frame(export_data.object_colors, nframes),
+        object_visibilities=_keep_first_frame(export_data.object_visibilities, nframes),
+        object_motions_valid=_keep_first_frame(export_data.object_motions_valid, nframes),
+        surface_points=_keep_first_frame(export_data.surface_points, nframes),
+        interior_points=_keep_first_frame(export_data.interior_points, nframes),
+    )
+
     merged_params: dict = {}
     merged_params.update(config)
     if optimal_params:
         merged_params.update(optimal_params)
     if best_params:
         merged_params.update(best_params)
+    merged_params = _filter_params_for_interactive(merged_params)
 
     payload = {
         "controller_mask": export_data.controller_mask,

@@ -23,6 +23,44 @@ from phystwin.sim.mesh_utils import triangulate_points
 
 LOGGER = logging.getLogger("phystwin.robot_spring_dual")
 
+TABLE_CENTER_X = -0.25
+TABLE_CENTER_Y = 0.0
+TABLE_CENTER_Z = 0.75
+TABLE_HALF_X = 0.45
+TABLE_HALF_Y = 0.35
+TABLE_HALF_Z = 0.25
+TABLE_CLOTH_CLEARANCE = 0.03
+
+INTERACTIVE_PARAM_KEYS = {
+    "fps",
+    "FPS",
+    "substeps",
+    "num_substeps",
+    "scale",
+    "z_offset",
+    "reverse_z",
+    "particle_radius",
+    "mass",
+    "particle_mass",
+    "spring_ke",
+    "init_spring_Y",
+    "spring_kd",
+    "dashpot_damping",
+    "k_neighbors",
+    "object_max_neighbours",
+    "use_controllers",
+    "controller_k",
+    "controller_ke",
+    "controller_kd",
+    "controller_mass",
+    "filter_visibility",
+    "filter_motion_valid",
+    "spring_neighbor_mode",
+    "object_radius",
+    "spring_stiffness",
+    "spring_damping",
+}
+
 
 @wp.kernel
 def apply_controller_force_kernel(
@@ -124,9 +162,163 @@ def _configure_joint_hold(model: newton.Model, control: newton.Control, target_k
     if model.joint_target_kd is not None:
         model.joint_target_kd.fill_(float(target_kd))
     if control is not None and control.joint_target_pos is not None and model.joint_q is not None:
-        control.joint_target_pos.assign(model.joint_q)
+        target_pos = control.joint_target_pos.numpy()
+        q = model.joint_q.numpy()
+        n = min(target_pos.shape[0], q.shape[0])
+        if n > 0:
+            target_pos[:n] = q[:n]
+            control.joint_target_pos.assign(target_pos)
     if control is not None and control.joint_target_vel is not None:
-        control.joint_target_vel.zero_()
+        target_vel = control.joint_target_vel.numpy()
+        target_vel.fill(0.0)
+        control.joint_target_vel.assign(target_vel)
+
+
+def _apply_robot_pose_preset(model: newton.Model, control: newton.Control, preset: str) -> None:
+    """Apply a named joint-space pose preset to the robot model/control."""
+    preset_name = str(preset).lower()
+    if preset_name in ("", "none"):
+        return
+
+    if preset_name != "forward_reach":
+        LOGGER.warning("Unknown robot pose preset: %s", preset)
+        return
+
+    # Heuristic arm pose that extends both manipulators forward.
+    targets = {
+        "lift_joint": 0.0,
+        "arm_l_joint1": 0.0,
+        "arm_l_joint2": 1.05,
+        "arm_l_joint3": 1.55,
+        "arm_l_joint4": 0.0,
+        "arm_l_joint5": 1.10,
+        "arm_l_joint6": 0.0,
+        "arm_l_joint7": 0.0,
+        "arm_r_joint1": 0.0,
+        "arm_r_joint2": -1.05,
+        "arm_r_joint3": 1.55,
+        "arm_r_joint4": 0.0,
+        "arm_r_joint5": 1.10,
+        "arm_r_joint6": 0.0,
+        "arm_r_joint7": 0.0,
+    }
+    _apply_named_joint_targets(model, control, targets)
+
+
+def _joint_limits_by_name(model: newton.Model) -> dict[str, tuple[int, float, float]]:
+    limits: dict[str, tuple[int, float, float]] = {}
+    if not hasattr(model, "joint_key") or model.joint_q_start is None:
+        return limits
+    keys = list(model.joint_key)
+    q_start = model.joint_q_start.numpy()
+    lower = model.joint_limit_lower.numpy() if model.joint_limit_lower is not None else None
+    upper = model.joint_limit_upper.numpy() if model.joint_limit_upper is not None else None
+    for i, name in enumerate(keys):
+        qi = int(q_start[i])
+        lo = float(lower[qi]) if lower is not None and 0 <= qi < lower.shape[0] else -np.inf
+        hi = float(upper[qi]) if upper is not None and 0 <= qi < upper.shape[0] else np.inf
+        limits[name] = (qi, lo, hi)
+    return limits
+
+
+def _apply_named_joint_targets(model: newton.Model, control: newton.Control, targets: dict[str, float]) -> None:
+    if not targets:
+        return
+    limits = _joint_limits_by_name(model)
+    if not limits:
+        return
+    q = model.joint_q.numpy()
+    changed = 0
+    for joint_name, value in targets.items():
+        info = limits.get(joint_name)
+        if info is None:
+            LOGGER.warning("Joint not found for target override: %s", joint_name)
+            continue
+        qi, lo, hi = info
+        v = float(value)
+        if np.isfinite(lo):
+            v = max(v, lo)
+        if np.isfinite(hi):
+            v = min(v, hi)
+        q[qi] = v
+        changed += 1
+    if changed == 0:
+        return
+    model.joint_q.assign(q)
+    if control is not None and control.joint_target_pos is not None:
+        target_pos = control.joint_target_pos.numpy()
+        n = min(target_pos.shape[0], q.shape[0])
+        if n > 0:
+            target_pos[:n] = q[:n]
+            control.joint_target_pos.assign(target_pos)
+
+
+def _apply_single_arm_overrides(model: newton.Model, control: newton.Control, args: argparse.Namespace) -> None:
+    side = "r" if str(args.active_arm).lower() == "right" else "l"
+    arm_targets: dict[str, float] = {}
+    vals = [
+        args.arm_j1,
+        args.arm_j2,
+        args.arm_j3,
+        args.arm_j4,
+        args.arm_j5,
+        args.arm_j6,
+        args.arm_j7,
+    ]
+    for i, value in enumerate(vals, start=1):
+        if value is None:
+            continue
+        arm_targets[f"arm_{side}_joint{i}"] = float(value)
+    if args.lift_joint is not None:
+        arm_targets["lift_joint"] = float(args.lift_joint)
+    _apply_named_joint_targets(model, control, arm_targets)
+
+
+def _log_arm_joint_ranges(model: newton.Model, active_arm: str) -> None:
+    limits = _joint_limits_by_name(model)
+    side = "r" if str(active_arm).lower() == "right" else "l"
+    joint_names = ["lift_joint"] + [f"arm_{side}_joint{i}" for i in range(1, 8)]
+    LOGGER.info("Joint ranges for active arm '%s':", active_arm)
+    for name in joint_names:
+        info = limits.get(name)
+        if info is None:
+            LOGGER.info("  %s: not found", name)
+            continue
+        _, lo, hi = info
+        LOGGER.info("  %s: [%.6f, %.6f]", name, lo, hi)
+
+
+def _resolve_joint_q_indices(model: newton.Model, joint_names: list[str]) -> list[int]:
+    limits = _joint_limits_by_name(model)
+    q_indices: list[int] = []
+    for name in joint_names:
+        info = limits.get(name)
+        if info is None:
+            continue
+        qi = int(info[0])
+        if qi not in q_indices:
+            q_indices.append(qi)
+    return q_indices
+
+
+def _add_front_table(
+    builder: newton.ModelBuilder,
+    center_x: float,
+    center_y: float,
+    center_z: float,
+    half_x: float,
+    half_y: float,
+    half_z: float,
+) -> None:
+    """Add a static tabletop box in front of the robot."""
+    table_xform = wp.transform(wp.vec3(center_x, center_y, center_z), wp.quat_identity())
+    builder.add_shape_box(
+        body=-1,
+        xform=table_xform,
+        hx=half_x,
+        hy=half_y,
+        hz=half_z,
+    )
 
 
 def _load_data_and_params(path: str) -> tuple[SpringMassPKL | SpringMassPKLPair, dict]:
@@ -162,6 +354,7 @@ def _load_data_and_params(path: str) -> tuple[SpringMassPKL | SpringMassPKLPair,
             if isinstance(v, (bool, int, float, str)):
                 params[k] = v
 
+    params = {k: v for k, v in params.items() if k in INTERACTIVE_PARAM_KEYS and v is not None}
     return data, params
 
 
@@ -229,6 +422,8 @@ class Example:
         reverse_z = bool(_pick_param(pkl_params, args, "reverse_z"))
         particle_radius = float(_pick_param(pkl_params, args, "particle_radius"))
         particle_mass = float(_pick_param_alias(pkl_params, args, ("mass", "particle_mass"), "mass"))
+        if args.particle_mass_override is not None:
+            particle_mass = float(args.particle_mass_override)
         spring_ke = float(
             _pick_param_alias(
                 pkl_params,
@@ -271,6 +466,13 @@ class Example:
         if controller_mass is None and bool(getattr(args, "enable_controller_drag", False)):
             # Force-drag needs dynamic controller particles; default to non-zero mass.
             controller_mass = 1.0
+        table_center_x = float(args.table_center_x)
+        table_center_y = float(args.table_center_y)
+        table_center_z = float(args.table_center_z)
+        table_half_x = float(args.table_half_x)
+        table_half_y = float(args.table_half_y)
+        table_half_z = float(args.table_half_z)
+        table_cloth_clearance = float(args.table_cloth_clearance)
 
         urdf_xform = None
         if args.urdf_offset is not None:
@@ -288,6 +490,15 @@ class Example:
             collapse_fixed_joints=False,
             enable_self_collisions=False,
         )
+        _add_front_table(
+            spring_builder,
+            table_center_x,
+            table_center_y,
+            table_center_z,
+            table_half_x,
+            table_half_y,
+            table_half_z,
+        )
 
         predict_mask = _object_mask(
             spring_data,
@@ -297,7 +508,14 @@ class Example:
         )
         predict_points = spring_data.object_points[0][predict_mask]
         scaled_predict = _apply_scale(predict_points, scale, reverse_z)
-        z_shift = _compute_z_shift(scaled_predict, z_offset)
+        z_shift_ground = _compute_z_shift(scaled_predict, z_offset)
+        if scaled_predict.size:
+            min_scaled_z = float(scaled_predict[:, 2].min())
+            table_top_z = table_center_z + table_half_z
+            z_shift_table = (table_top_z + table_cloth_clearance) - min_scaled_z
+            z_shift = max(z_shift_ground, z_shift_table)
+        else:
+            z_shift = z_shift_ground
 
         spring_mapping = map_pkl_to_newton(
             data=spring_data,
@@ -357,6 +575,15 @@ class Example:
         self.spring_state_0 = self.spring_model.state()
         self.spring_state_1 = self.spring_model.state()
         self.spring_control = self.spring_model.control()
+        if args.spring_offset is not None:
+            spring_offset = np.asarray(args.spring_offset, dtype=np.float32)
+            if spring_offset.size == 3 and np.linalg.norm(spring_offset) > 0.0:
+                q0 = self.spring_state_0.particle_q.numpy()
+                q1 = self.spring_state_1.particle_q.numpy()
+                q0[:, :3] += spring_offset[None, :]
+                q1[:, :3] += spring_offset[None, :]
+                self.spring_state_0.particle_q.assign(q0)
+                self.spring_state_1.particle_q.assign(q1)
         self.spring_contacts = None
         self.spring_collisions_enabled = bool(args.enable_spring_collisions) or _requires_newton_contacts(args.spring_solver)
         if self.spring_collisions_enabled:
@@ -386,6 +613,15 @@ class Example:
             collapse_fixed_joints=False,
             enable_self_collisions=False,
         )
+        _add_front_table(
+            robot_builder,
+            table_center_x,
+            table_center_y,
+            table_center_z,
+            table_half_x,
+            table_half_y,
+            table_half_z,
+        )
         if not args.no_ground:
             robot_builder.add_ground_plane()
         self.robot_model = robot_builder.finalize()
@@ -398,6 +634,11 @@ class Example:
             target_ke=float(args.robot_joint_ke),
             target_kd=float(args.robot_joint_kd),
         )
+        _apply_robot_pose_preset(self.robot_model, self.robot_control, args.robot_pose_preset)
+        _apply_single_arm_overrides(self.robot_model, self.robot_control, args)
+        if args.print_arm_joint_ranges:
+            _log_arm_joint_ranges(self.robot_model, args.active_arm)
+        self._init_right_gripper_autoclose(args)
         self.robot_solver = _build_solver(
             args.robot_solver,
             self.robot_model,
@@ -448,6 +689,94 @@ class Example:
         if self.spring_model.shape_body is not None and self.spring_model.shape_count > 0:
             shape_body = self.spring_model.shape_body.numpy()
             self._spring_robot_shape_mask = np.isin(shape_body, np.array(sorted(self._spring_robot_body_set), dtype=np.int32))
+
+    def _init_right_gripper_autoclose(self, args: argparse.Namespace) -> None:
+        self.auto_close_right_gripper = bool(args.auto_close_right_gripper)
+        self.gripper_close_start_time = float(args.gripper_close_start_time)
+        self.gripper_close_duration = max(float(args.gripper_close_duration), 1.0e-6)
+        self.gripper_close_target = float(np.clip(args.gripper_close_target, 0.0, 1.0))
+        self._right_gripper_q_indices: np.ndarray | None = None
+        self._right_gripper_open_targets: np.ndarray | None = None
+        self._right_gripper_close_targets: np.ndarray | None = None
+        self.auto_sweep_arm_j1_after_grip = bool(args.auto_sweep_arm_j1_after_grip)
+        self.arm_j1_sweep_target = float(args.arm_j1_sweep_target)
+        self.arm_j1_sweep_duration = max(float(args.arm_j1_sweep_duration), 1.0e-6)
+        self._arm_j1_q_index: int | None = None
+        self._arm_j1_start_target: float | None = None
+        self._arm_j1_sweep_start_time: float | None = None
+        self._arm_j1_sweep_clamped_target: float | None = None
+        if not self.auto_close_right_gripper:
+            return
+        joint_names = [
+            "gripper_r_joint",
+            "gripper_r_joint2",
+            "gripper_r_joint3",
+            "gripper_r_joint4",
+        ]
+        q_indices = _resolve_joint_q_indices(self.robot_model, joint_names)
+        if not q_indices:
+            LOGGER.warning("Auto right gripper close enabled but gripper joints were not found.")
+            self.auto_close_right_gripper = False
+            return
+        q_indices_np = np.asarray(q_indices, dtype=np.int32)
+        lower = self.robot_model.joint_limit_lower.numpy()[q_indices_np]
+        upper = self.robot_model.joint_limit_upper.numpy()[q_indices_np]
+        open_targets = self.robot_control.joint_target_pos.numpy()[q_indices_np].copy()
+        close_targets = lower + self.gripper_close_target * (upper - lower)
+        close_targets = np.clip(close_targets, lower, upper)
+        self._right_gripper_q_indices = q_indices_np
+        self._right_gripper_open_targets = open_targets
+        self._right_gripper_close_targets = close_targets
+        if self.auto_sweep_arm_j1_after_grip:
+            side = "r" if str(args.active_arm).lower() == "right" else "l"
+            joint_name = f"arm_{side}_joint1"
+            limits = _joint_limits_by_name(self.robot_model)
+            info = limits.get(joint_name)
+            if info is None:
+                LOGGER.warning("Auto arm-j1 sweep enabled but joint '%s' not found.", joint_name)
+                self.auto_sweep_arm_j1_after_grip = False
+            else:
+                qi, lo, hi = info
+                self._arm_j1_q_index = int(qi)
+                start_targets = self.robot_control.joint_target_pos.numpy()
+                self._arm_j1_start_target = float(start_targets[self._arm_j1_q_index])
+                target = self.arm_j1_sweep_target
+                if np.isfinite(lo):
+                    target = max(target, float(lo))
+                if np.isfinite(hi):
+                    target = min(target, float(hi))
+                self._arm_j1_sweep_clamped_target = float(target)
+                self._arm_j1_sweep_start_time = self.gripper_close_start_time + self.gripper_close_duration
+
+    def _update_right_gripper_autoclose(self, current_time: float) -> None:
+        if not self.auto_close_right_gripper:
+            return
+        if self._right_gripper_q_indices is None:
+            return
+        if self._right_gripper_open_targets is None or self._right_gripper_close_targets is None:
+            return
+        alpha = (current_time - self.gripper_close_start_time) / self.gripper_close_duration
+        alpha = float(np.clip(alpha, 0.0, 1.0))
+        targets = (1.0 - alpha) * self._right_gripper_open_targets + alpha * self._right_gripper_close_targets
+        target_pos = self.robot_control.joint_target_pos.numpy()
+        target_pos[self._right_gripper_q_indices] = targets
+        self.robot_control.joint_target_pos.assign(target_pos)
+
+    def _update_post_grip_arm_j1_sweep(self, current_time: float) -> None:
+        if not self.auto_sweep_arm_j1_after_grip:
+            return
+        if self._arm_j1_q_index is None:
+            return
+        if self._arm_j1_start_target is None or self._arm_j1_sweep_clamped_target is None:
+            return
+        if self._arm_j1_sweep_start_time is None:
+            return
+        alpha = (current_time - self._arm_j1_sweep_start_time) / self.arm_j1_sweep_duration
+        alpha = float(np.clip(alpha, 0.0, 1.0))
+        value = (1.0 - alpha) * self._arm_j1_start_target + alpha * self._arm_j1_sweep_clamped_target
+        target_pos = self.robot_control.joint_target_pos.numpy()
+        target_pos[self._arm_j1_q_index] = value
+        self.robot_control.joint_target_pos.assign(target_pos)
 
     def _init_robot_spring_collider_sync(self) -> None:
         """Create body-index mapping for syncing robot poses into spring colliders."""
@@ -722,10 +1051,13 @@ class Example:
         self.viewer.log_points("/drag/target", point, radii, point_colors, hidden=False)
 
     def step(self):
-        for _ in range(self.sim_substeps):
+        for substep_idx in range(self.sim_substeps):
             # Robot step.
             self.robot_state_0.clear_forces()
             self.viewer.apply_forces(self.robot_state_0)
+            current_time = self.sim_time + substep_idx * self.sim_dt
+            self._update_right_gripper_autoclose(current_time)
+            self._update_post_grip_arm_j1_sweep(current_time)
             if self.robot_collisions_enabled:
                 self.robot_contacts = self.robot_model.collide(
                     self.robot_state_0, collision_pipeline=self.robot_collision_pipeline
@@ -894,6 +1226,98 @@ def main() -> None:
         action="store_true",
         help="Keep rendering object points when mesh visualization is enabled.",
     )
+    parser.add_argument(
+        "--spring-offset",
+        type=float,
+        nargs=3,
+        default=None,
+        help="XYZ offset applied to spring-mass particles at initialization.",
+    )
+    parser.add_argument(
+        "--particle-mass-override",
+        type=float,
+        default=None,
+        help="Override object particle mass at runtime (takes precedence over PKL params).",
+    )
+    parser.add_argument(
+        "--robot-pose-preset",
+        type=str,
+        default="none",
+        choices=("none", "forward_reach"),
+        help="Named robot initial pose preset.",
+    )
+    parser.add_argument(
+        "--active-arm",
+        type=str,
+        default="right",
+        choices=("left", "right"),
+        help="Which arm to control with --arm-j* values.",
+    )
+    parser.add_argument("--lift-joint", type=float, default=None, help="Optional lift_joint target.")
+    parser.add_argument("--arm-j1", type=float, default=None, help="Active-arm joint1 target.")
+    parser.add_argument("--arm-j2", type=float, default=None, help="Active-arm joint2 target.")
+    parser.add_argument("--arm-j3", type=float, default=None, help="Active-arm joint3 target.")
+    parser.add_argument("--arm-j4", type=float, default=None, help="Active-arm joint4 target.")
+    parser.add_argument("--arm-j5", type=float, default=None, help="Active-arm joint5 target.")
+    parser.add_argument("--arm-j6", type=float, default=None, help="Active-arm joint6 target.")
+    parser.add_argument("--arm-j7", type=float, default=None, help="Active-arm joint7 target.")
+    parser.add_argument(
+        "--print-arm-joint-ranges",
+        action="store_true",
+        help="Print active-arm joint limits from the loaded URDF/model.",
+    )
+    parser.add_argument(
+        "--auto-close-right-gripper",
+        action="store_true",
+        help="Automatically close right gripper after spawn.",
+    )
+    parser.add_argument(
+        "--gripper-close-start-time",
+        type=float,
+        default=0.5,
+        help="Seconds after start before right gripper starts closing.",
+    )
+    parser.add_argument(
+        "--gripper-close-duration",
+        type=float,
+        default=2.0,
+        help="Seconds spent closing right gripper.",
+    )
+    parser.add_argument(
+        "--gripper-close-target",
+        type=float,
+        default=0.9,
+        help="Normalized close target in [0,1] for right gripper joints.",
+    )
+    parser.add_argument(
+        "--auto-sweep-arm-j1-after-grip",
+        action="store_true",
+        help="After gripper closes, sweep active arm joint1 toward target.",
+    )
+    parser.add_argument(
+        "--arm-j1-sweep-target",
+        type=float,
+        default=-3.0,
+        help="Target value for active arm joint1 after gripper close.",
+    )
+    parser.add_argument(
+        "--arm-j1-sweep-duration",
+        type=float,
+        default=2.0,
+        help="Seconds to sweep active arm joint1 after gripper close.",
+    )
+    parser.add_argument("--table-center-x", type=float, default=TABLE_CENTER_X, help="Table center X.")
+    parser.add_argument("--table-center-y", type=float, default=TABLE_CENTER_Y, help="Table center Y.")
+    parser.add_argument("--table-center-z", type=float, default=TABLE_CENTER_Z, help="Table center Z (height).")
+    parser.add_argument("--table-half-x", type=float, default=TABLE_HALF_X, help="Table half size X.")
+    parser.add_argument("--table-half-y", type=float, default=TABLE_HALF_Y, help="Table half size Y.")
+    parser.add_argument("--table-half-z", type=float, default=TABLE_HALF_Z, help="Table half size Z (thickness/height).")
+    parser.add_argument(
+        "--table-cloth-clearance",
+        type=float,
+        default=TABLE_CLOTH_CLEARANCE,
+        help="Minimum initial cloth clearance above table top.",
+    )
 
     viewer, args = newton.examples.init(parser)
     # Internal defaults for options no longer exposed in CLI.
@@ -904,7 +1328,7 @@ def main() -> None:
         "no_ground": False,
         "enable_robot_collisions": False,
         "enable_spring_collisions": True,
-        "spring_soft_contact_mu": 0.9,
+        "spring_soft_contact_mu": 0.985,
         "controller_drag_mode": "force",
         "controller_drag_stiffness": 2.0e4,
         "controller_drag_damping": 1.0e2,
