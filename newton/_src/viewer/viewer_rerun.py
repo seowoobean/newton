@@ -20,7 +20,6 @@ import numpy as np
 import warp as wp
 
 import newton
-from newton.utils import create_plane_mesh
 
 from ..core.types import override
 from ..utils.mesh import compute_vertex_normals
@@ -237,9 +236,12 @@ class ViewerRerun(ViewerBase):
             indices (wp.array): Triangle indices (wp.uint32).
             normals (wp.array, optional): Vertex normals (wp.vec3).
             uvs (wp.array, optional): UV coordinates (wp.vec2).
-            hidden (bool): Whether the mesh is hidden (unused).
+            hidden (bool): Whether the mesh is hidden.
             backface_culling (bool): Whether to enable backface culling (unused).
         """
+        if hidden:
+            return
+
         assert isinstance(points, wp.array)
         assert isinstance(indices, wp.array)
         assert normals is None or isinstance(normals, wp.array)
@@ -320,8 +322,14 @@ class ViewerRerun(ViewerBase):
             scales (wp.array): Instance scales (wp.vec3).
             colors (wp.array): Instance colors (wp.vec3).
             materials (wp.array): Instance materials (wp.vec4).
-            hidden (bool): Whether the instances are hidden. (unused)
+            hidden (bool): Whether the instances are hidden.
         """
+        if hidden:
+            if name in self._instances:
+                rr.log(name, rr.Clear(recursive=False))
+                self._instances.pop(name, None)
+            return
+
         # Check that mesh exists
         if mesh not in self._meshes:
             raise RuntimeError(f"Mesh {mesh} not found. Call log_mesh first.")
@@ -578,11 +586,11 @@ class ViewerRerun(ViewerBase):
             else:
                 width = geo_scale[0]
                 length = geo_scale[1] if len(geo_scale) > 1 else 10.0
-            vertices, indices = create_plane_mesh(width, length)
-            points = wp.array(vertices[:, 0:3], dtype=wp.vec3, device=self.device)
-            normals = wp.array(vertices[:, 3:6], dtype=wp.vec3, device=self.device)
-            uvs = wp.array(vertices[:, 6:8], dtype=wp.vec2, device=self.device)
-            indices = wp.array(indices, dtype=wp.int32, device=self.device)
+            mesh = newton.Mesh.create_plane(width, length, compute_inertia=False)
+            points = wp.array(mesh.vertices, dtype=wp.vec3, device=self.device)
+            normals = wp.array(mesh.normals, dtype=wp.vec3, device=self.device)
+            uvs = wp.array(mesh.uvs, dtype=wp.vec2, device=self.device)
+            indices = wp.array(mesh.indices, dtype=wp.int32, device=self.device)
             self.log_mesh(name, points, indices, normals, uvs, hidden=hidden)
         else:
             super().log_geo(name, geo_type, geo_scale, geo_thickness, geo_is_solid, geo_src, hidden)

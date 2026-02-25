@@ -34,6 +34,46 @@ Newton's :meth:`newton.ModelBuilder.add_usd` method provides a USD import pipeli
 * Collects solver-specific attributes preserving solver-native attributes for potential use in the solver
 * Supports parsing of custom Newton model/state/control attributes for specialized simulation requirements
 
+Mass and Inertia Precedence
+---------------------------
+
+For rigid bodies with ``UsdPhysics.MassAPI`` applied, Newton resolves each inertial property
+(mass, inertia, center of mass) independently.  Authored attributes take precedence;
+``UsdPhysics.RigidBodyAPI.ComputeMassProperties(...)`` provides baseline values for the rest.
+
+1. Authored ``physics:mass``, ``physics:diagonalInertia``, and ``physics:centerOfMass`` are
+   applied directly when present.  If ``physics:principalAxes`` is missing, identity rotation
+   is used.
+2. When ``physics:mass`` is authored but ``physics:diagonalInertia`` is not, the inertia
+   accumulated from collision shapes is scaled by ``authored_mass / accumulated_mass``.
+3. For any remaining unresolved properties, Newton falls back to
+   ``UsdPhysics.RigidBodyAPI.ComputeMassProperties(...)``.
+   In this fallback path, collider contributions use a two-level precedence:
+
+   a. If collider ``UsdPhysics.MassAPI`` has authored ``mass`` and ``diagonalInertia``, those
+      authored values are converted to unit-density collider mass information.
+   b. Otherwise, Newton derives unit-density collider mass information from collider geometry.
+
+   A collider is skipped (with warning) only if neither path provides usable collider mass
+   information.
+
+   .. note::
+
+      The callback payload provided by Newton in this path is unit-density collider shape
+      information (volume/COM/inertia basis). Collider density authored via ``UsdPhysics.MassAPI``
+      (for example, ``physics:density``) or via bound ``UsdPhysics.MaterialAPI`` is still applied
+      by USD during ``ComputeMassProperties(...)``. In other words, unit-density callback data does
+      not mean authored densities are ignored.
+
+If resolved mass is non-positive, inverse mass is set to ``0``.
+
+.. tip::
+
+   For the most predictable results, fully author ``physics:mass``, ``physics:diagonalInertia``,
+   ``physics:principalAxes``, and ``physics:centerOfMass`` on each rigid body.  This avoids any
+   fallback heuristics and is also the fastest import path since ``ComputeMassProperties(...)``
+   can be skipped entirely.
+
 .. _schema_resolvers:
 
 1. Solver Attribute Remapping
@@ -64,6 +104,26 @@ The table below demonstrates PhysX attribute remapping with both direct mapping 
    * - ``physxScene:timeStepsPerSecond``
      - ``time_step``
      - ``1.0 / timeStepsPerSecond``
+   * - ``physxArticulation:enabledSelfCollisions``
+     - ``self_collision_enabled`` (per articulation)
+     - Direct mapping
+
+**Newton articulation remapping:**
+
+On articulation root prims (with ``PhysicsArticulationRootAPI`` or ``NewtonArticulationRootAPI``), the following is resolved:
+
+.. list-table:: Newton Articulation Remapping
+   :header-rows: 1
+   :widths: 30 30 40
+
+   * - **Newton Attribute**
+     - **Resolved key**
+     - **Transformation**
+   * - ``newton:selfCollisionEnabled``
+     - ``self_collision_enabled``
+     - Direct mapping
+
+The parser resolves ``self_collision_enabled`` from either ``newton:selfCollisionEnabled`` or ``physxArticulation:enabledSelfCollisions`` (in resolver priority order). The ``enable_self_collisions`` argument to :meth:`newton.ModelBuilder.add_usd` is used as the default when neither attribute is authored.
 
 **MuJoCo Attribute Remapping Examples:**
 
@@ -116,7 +176,7 @@ The following USD example demonstrates how PhysX attributes are authored in a US
        prepend apiSchemas = ["PhysicsCollisionAPI", "PhysxCollisionAPI"]
    ) {
        # PhysX collision settings
-       float physxCollision:contactOffset = 0.02  # → contact_margin = 0.02
+      float physxCollision:contactOffset = 0.02  # → gap = 0.02
    }
 
 2. Priority-Based Resolution
@@ -207,7 +267,7 @@ Each solver has its own namespace prefixes for solver-specific attributes. The t
      - ``mjc:model:joint:testMjcJointScalar``, ``mjc:state:joint:testMjcJointVec3``
    * - **Newton**
      - ``newton``
-     - ``newton:hullVertexLimit``, ``newton:contactMargin``
+     - ``newton:hullVertexLimit``, ``newton:contactGap``
 
 **Accessing Collected Solver-Specific Attributes:**
 

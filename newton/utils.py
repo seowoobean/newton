@@ -28,25 +28,11 @@ __all__ = [
 # ==================================================================================
 from ._src.utils.mesh import (
     MeshAdjacency,
-    create_box_mesh,
-    create_capsule_mesh,
-    create_cone_mesh,
-    create_cylinder_mesh,
-    create_ellipsoid_mesh,
-    create_plane_mesh,
-    create_sphere_mesh,
     solidify_mesh,
 )
 
 __all__ += [
     "MeshAdjacency",
-    "create_box_mesh",
-    "create_capsule_mesh",
-    "create_cone_mesh",
-    "create_cylinder_mesh",
-    "create_ellipsoid_mesh",
-    "create_plane_mesh",
-    "create_sphere_mesh",
     "solidify_mesh",
 ]
 
@@ -62,11 +48,29 @@ __all__ += [
 ]
 
 # ==================================================================================
+# cable utils
+# ==================================================================================
+from ._src.utils.cable import (  # noqa: E402
+    create_cable_stiffness_from_elastic_moduli,
+    create_parallel_transport_cable_quaternions,
+    create_straight_cable_points,
+    create_straight_cable_points_and_quaternions,
+)
+
+__all__ += [
+    "create_cable_stiffness_from_elastic_moduli",
+    "create_parallel_transport_cable_quaternions",
+    "create_straight_cable_points",
+    "create_straight_cable_points_and_quaternions",
+]
+
+# ==================================================================================
 # spatial math
 # TODO: move these to Warp?
 # ==================================================================================
 from ._src.core.spatial import (  # noqa: E402
     quat_between_axes,
+    quat_between_vectors_robust,
     quat_decompose,
     quat_from_euler,
     quat_to_euler,
@@ -80,6 +84,7 @@ from ._src.core.spatial import (  # noqa: E402
 
 __all__ += [
     "quat_between_axes",
+    "quat_between_vectors_robust",
     "quat_decompose",
     "quat_from_euler",
     "quat_to_euler",

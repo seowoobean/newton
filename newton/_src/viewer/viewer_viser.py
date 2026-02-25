@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import inspect
+import os
 import warnings
 from pathlib import Path
 from typing import ClassVar
@@ -22,7 +23,6 @@ import numpy as np
 import warp as wp
 
 import newton
-from newton.utils import create_plane_mesh
 
 from ..core.types import override
 from ..utils.texture import load_texture, normalize_texture
@@ -51,7 +51,7 @@ class ViewerViser(ViewerBase):
         """Lazily import and return the viser module."""
         if cls._viser_module is None:
             try:
-                import viser  # noqa: PLC0415
+                import viser
 
                 cls._viser_module = viser
             except ImportError as e:
@@ -81,7 +81,7 @@ class ViewerViser(ViewerBase):
     def _build_trimesh_mesh(points: np.ndarray, indices: np.ndarray, uvs: np.ndarray, texture: np.ndarray):
         """Create a trimesh object with texture visuals (if trimesh is available)."""
         try:
-            import trimesh  # noqa: PLC0415
+            import trimesh
         except Exception:
             return None
 
@@ -92,8 +92,8 @@ class ViewerViser(ViewerBase):
         mesh = trimesh.Trimesh(vertices=points, faces=faces, process=False)
 
         try:
-            from PIL import Image  # noqa: PLC0415
-            from trimesh.visual.texture import TextureVisuals  # noqa: PLC0415
+            from PIL import Image
+            from trimesh.visual.texture import TextureVisuals
 
             image = Image.fromarray(texture)
             mesh.visual = TextureVisuals(uv=uvs, image=image)
@@ -544,27 +544,36 @@ class ViewerViser(ViewerBase):
         if starts_np is None or ends_np is None or len(starts_np) == 0:
             return
 
-        # Viser expects line segments as (N, 2, 3) or we can use points format
-        # Build line points array: interleave starts and ends
+        starts_np = np.asarray(starts_np, dtype=np.float32)
+        ends_np = np.asarray(ends_np, dtype=np.float32)
         num_lines = len(starts_np)
-        line_points = np.zeros((num_lines * 2, 3), dtype=np.float32)
-        line_points[0::2] = starts_np
-        line_points[1::2] = ends_np
+
+        # Viser requires points with shape (N, 2, 3): [start, end] per segment.
+        line_points = np.stack((starts_np, ends_np), axis=1)
+
+        def _rgb_to_uint8_array(rgb: np.ndarray) -> np.ndarray:
+            rgb = np.asarray(rgb, dtype=np.float32)
+            max_val = float(np.max(rgb)) if rgb.size > 0 else 0.0
+            if max_val <= 1.0:
+                rgb = rgb * 255.0
+            return np.clip(rgb, 0, 255).astype(np.uint8)
 
         # Process colors
+        color_rgb: tuple[int, int, int] | np.ndarray = (0, 255, 0)
         if colors is not None:
             colors_np = self._to_numpy(colors)
             if colors_np is not None:
-                if colors_np.ndim == 1 and len(colors_np) == 3:
-                    # Single color for all lines
-                    color_rgb = tuple((colors_np * 255).astype(np.uint8).tolist())
-                else:
-                    # Per-line colors - expand to per-point
-                    color_rgb = (0, 255, 0)  # Default green
-            else:
-                color_rgb = (0, 255, 0)
-        else:
-            color_rgb = (0, 255, 0)
+                colors_np = np.asarray(colors_np)
+                if colors_np.ndim == 1 and colors_np.shape[0] == 3:
+                    # Single color for all lines.
+                    color_rgb = tuple(_rgb_to_uint8_array(colors_np).tolist())
+                elif colors_np.ndim == 2 and colors_np.shape == (num_lines, 3):
+                    # Per-line colors: repeat each line color for [start, end].
+                    line_colors = _rgb_to_uint8_array(colors_np)
+                    color_rgb = np.repeat(line_colors[:, None, :], 2, axis=1)
+                elif colors_np.ndim == 3 and colors_np.shape == (num_lines, 2, 3):
+                    # Already per-point-per-segment colors.
+                    color_rgb = _rgb_to_uint8_array(colors_np)
 
         # Add line segments to viser
         handle = self._server.scene.add_line_segments(
@@ -600,11 +609,11 @@ class ViewerViser(ViewerBase):
             else:
                 width = geo_scale[0]
                 length = geo_scale[1] if len(geo_scale) > 1 else 10.0
-            vertices, indices = create_plane_mesh(width, length)
-            points = wp.array(vertices[:, 0:3], dtype=wp.vec3, device=self.device)
-            normals = wp.array(vertices[:, 3:6], dtype=wp.vec3, device=self.device)
-            uvs = wp.array(vertices[:, 6:8], dtype=wp.vec2, device=self.device)
-            indices = wp.array(indices, dtype=wp.int32, device=self.device)
+            mesh = newton.Mesh.create_plane(width, length, compute_inertia=False)
+            points = wp.array(mesh.vertices, dtype=wp.vec3, device=self.device)
+            normals = wp.array(mesh.normals, dtype=wp.vec3, device=self.device)
+            uvs = wp.array(mesh.uvs, dtype=wp.vec2, device=self.device)
+            indices = wp.array(mesh.indices, dtype=wp.int32, device=self.device)
             self.log_mesh(name, points, indices, normals, uvs, hidden=hidden)
         else:
             super().log_geo(name, geo_type, geo_scale, geo_thickness, geo_is_solid, geo_src, hidden)
@@ -709,7 +718,7 @@ class ViewerViser(ViewerBase):
                 viewer.show_notebook()  # Saves recording and displays with timeline
         """
 
-        from IPython.display import HTML, IFrame, display  # noqa: PLC0415
+        from IPython.display import HTML, IFrame, display
 
         from .viewer import is_sphinx_build  # noqa: PLC0415
 
@@ -864,9 +873,50 @@ class ViewerViser(ViewerBase):
         server_thread = threading.Thread(target=server.serve_forever, daemon=True)
         server_thread.start()
 
+        # Keep playbackPath relative so notebook proxy prefixes (e.g. /lab/proxy/<port>/)
+        # are preserved. Each viewer instance uses a different port, so paths stay distinct.
+        playback_path = "recording.viser"
         base_url = f"http://127.0.0.1:{port}"
+        player_url = f"{base_url}/?playbackPath={playback_path}"
 
-        # Create URL with playback path pointing to the served recording
-        player_url = f"{base_url}/?playbackPath=/recording.viser"
+        # Route through Jupyter's proxy only when jupyter-server-proxy is installed.
+        # Without that package, proxy URLs may be unavailable and break playback.
+        jupyter_base_url = None
+        try:
+            from importlib.util import find_spec  # noqa: PLC0415
+
+            has_jupyter_server_proxy = find_spec("jupyter_server_proxy") is not None
+        except Exception:
+            has_jupyter_server_proxy = False
+
+        if has_jupyter_server_proxy:
+            # JUPYTER_BASE_URL is not always exported (e.g. CLI --NotebookApp.base_url).
+            # In that case, fall back to common env vars and running server metadata.
+            for env_name in ("JUPYTER_BASE_URL", "JUPYTERHUB_SERVICE_PREFIX", "NB_PREFIX"):
+                candidate = os.environ.get(env_name)
+                if candidate:
+                    jupyter_base_url = candidate
+                    break
+
+            if not jupyter_base_url:
+                try:
+                    from jupyter_server.serverapp import list_running_servers  # noqa: PLC0415
+
+                    for server in list_running_servers():
+                        candidate = server.get("base_url")
+                        if candidate:
+                            jupyter_base_url = candidate
+                            break
+                except Exception:
+                    pass
+
+            if jupyter_base_url:
+                if not jupyter_base_url.startswith("/"):
+                    jupyter_base_url = "/" + jupyter_base_url
+                if jupyter_base_url != "/":
+                    jupyter_base_url = jupyter_base_url.rstrip("/")
+                else:
+                    jupyter_base_url = ""
+                player_url = f"{jupyter_base_url}/proxy/{port}/?playbackPath={playback_path}"
 
         return player_url

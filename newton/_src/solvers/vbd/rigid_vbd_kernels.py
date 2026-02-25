@@ -747,8 +747,8 @@ def evaluate_body_particle_contact(
         body_contact_force = n * body_contact_force_norm
         body_contact_hessian = body_particle_contact_ke * wp.outer(n, n)
 
-        # Use the larger of body-particle friction and shape material friction
-        mu = wp.max(friction_mu, shape_material_mu[shape_index])
+        # Combine body-particle friction and shape material friction using geometric mean.
+        mu = wp.sqrt(friction_mu * shape_material_mu[shape_index])
 
         dx = particle_pos - particle_prev_pos
 
@@ -1054,7 +1054,7 @@ def evaluate_joint_force_hessian(
 # Utility kernels
 # -----------------------------
 @wp.kernel
-def count_num_adjacent_joints(
+def _count_num_adjacent_joints(
     joint_parent: wp.array(dtype=wp.int32),
     joint_child: wp.array(dtype=wp.int32),
     num_body_adjacent_joints: wp.array(dtype=wp.int32),
@@ -1072,7 +1072,7 @@ def count_num_adjacent_joints(
 
 
 @wp.kernel
-def fill_adjacent_joints(
+def _fill_adjacent_joints(
     joint_parent: wp.array(dtype=wp.int32),
     joint_child: wp.array(dtype=wp.int32),
     body_adjacent_joints_offsets: wp.array(dtype=wp.int32),
@@ -1519,8 +1519,8 @@ def accumulate_body_body_contacts_per_body(
     rigid_contact_point0: wp.array(dtype=wp.vec3),
     rigid_contact_point1: wp.array(dtype=wp.vec3),
     rigid_contact_normal: wp.array(dtype=wp.vec3),
-    rigid_contact_thickness0: wp.array(dtype=float),
-    rigid_contact_thickness1: wp.array(dtype=float),
+    rigid_contact_margin0: wp.array(dtype=float),
+    rigid_contact_margin1: wp.array(dtype=float),
     shape_body: wp.array(dtype=wp.int32),
     body_contact_buffer_pre_alloc: int,
     body_contact_counts: wp.array(dtype=wp.int32),
@@ -1576,7 +1576,7 @@ def accumulate_body_body_contacts_per_body(
         contact_normal = -rigid_contact_normal[contact_idx]
         cp0_world = wp.transform_point(body_q[b0], cp0_local) if b0 >= 0 else cp0_local
         cp1_world = wp.transform_point(body_q[b1], cp1_local) if b1 >= 0 else cp1_local
-        thickness = rigid_contact_thickness0[contact_idx] + rigid_contact_thickness1[contact_idx]
+        thickness = rigid_contact_margin0[contact_idx] + rigid_contact_margin1[contact_idx]
         dist = wp.dot(contact_normal, cp1_world - cp0_world)
         penetration = thickness - dist
 
@@ -2212,8 +2212,8 @@ def update_duals_body_body_contacts(
     rigid_contact_point0: wp.array(dtype=wp.vec3),
     rigid_contact_point1: wp.array(dtype=wp.vec3),
     rigid_contact_normal: wp.array(dtype=wp.vec3),
-    rigid_contact_thickness0: wp.array(dtype=float),
-    rigid_contact_thickness1: wp.array(dtype=float),
+    rigid_contact_margin0: wp.array(dtype=float),
+    rigid_contact_margin1: wp.array(dtype=float),
     shape_body: wp.array(dtype=int),
     body_q: wp.array(dtype=wp.transform),
     contact_material_ke: wp.array(dtype=float),
@@ -2231,7 +2231,7 @@ def update_duals_body_body_contacts(
         rigid_contact_shape0/1: Shape ids for each contact pair
         rigid_contact_point0/1: Contact points in local shape frames
         rigid_contact_normal: Contact normals (pointing from shape0 to shape1)
-        rigid_contact_thickness0/1: Per-shape thickness (for SDF/capsule padding)
+        rigid_contact_margin0/1: Per-shape margin (for SDF/capsule padding)
         shape_body: Map from shape id to body id (-1 if kinematic/ground)
         body_q: Current body transforms
         contact_material_ke: Per-contact target stiffness
@@ -2271,7 +2271,7 @@ def update_duals_body_body_contacts(
     # dist = dot(n, p0 - p1); positive implies separation along normal
     d = p0_world - p1_world
     dist = wp.dot(rigid_contact_normal[idx], d)
-    thickness_total = rigid_contact_thickness0[idx] + rigid_contact_thickness1[idx]
+    thickness_total = rigid_contact_margin0[idx] + rigid_contact_margin1[idx]
     penetration = wp.max(0.0, thickness_total - dist)
 
     # Update penalty: k_new = min(k + beta * |C|, stiffness)

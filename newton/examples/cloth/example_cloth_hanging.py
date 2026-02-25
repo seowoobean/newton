@@ -110,7 +110,7 @@ class Example:
             solver_params = {
                 "add_springs": True,
                 "spring_ke": 1.0e3,
-                "spring_kd": 1.0e1,
+                "spring_kd": 1.0e0,
             }
 
         else:  # self.solver_type == "vbd"
@@ -147,15 +147,19 @@ class Example:
                 iterations=self.iterations,
             )
         else:  # self.solver_type == "vbd"
-            self.solver = newton.solvers.SolverVBD(model=self.model, iterations=self.iterations)
+            self.solver = newton.solvers.SolverVBD(
+                model=self.model,
+                iterations=self.iterations,
+                particle_enable_self_contact=True,
+                particle_self_contact_radius=0.02,
+                particle_self_contact_margin=0.03,
+            )
 
         self.state_0 = self.model.state()
         self.state_1 = self.model.state()
         self.control = self.model.control()
 
-        # Create collision pipeline (default: unified)
-        self.collision_pipeline = newton.examples.create_collision_pipeline(self.model, args)
-        self.contacts = self.model.collide(self.state_0, collision_pipeline=self.collision_pipeline)
+        self.contacts = self.model.contacts()
 
         self.viewer.set_model(self.model)
 
@@ -176,7 +180,7 @@ class Example:
             # apply forces to the model
             self.viewer.apply_forces(self.state_0)
 
-            self.contacts = self.model.collide(self.state_0, collision_pipeline=self.collision_pipeline)
+            self.model.collide(self.state_0, self.contacts)
             self.solver.step(self.state_0, self.state_1, self.control, self.contacts, self.sim_dt)
 
             # swap states
