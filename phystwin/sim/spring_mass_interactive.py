@@ -98,12 +98,14 @@ def gather_patch_contact_candidates_kernel(
     contact_count: wp.array(dtype=int),
     contact_particle: wp.array(dtype=int),
     contact_shape: wp.array(dtype=int),
+    contact_body_pos: wp.array(dtype=wp.vec3),
     contact_normal: wp.array(dtype=wp.vec3),
     shape_patch_mask: wp.array(dtype=wp.int32),
     max_candidates: int,
     candidate_count: wp.array(dtype=int),
     candidate_particle: wp.array(dtype=int),
     candidate_shape: wp.array(dtype=int),
+    candidate_body_pos: wp.array(dtype=wp.vec3),
     candidate_normal: wp.array(dtype=wp.vec3),
 ):
     tid = wp.tid()
@@ -123,6 +125,7 @@ def gather_patch_contact_candidates_kernel(
         return
     candidate_particle[out_idx] = particle_idx
     candidate_shape[out_idx] = shape_idx
+    candidate_body_pos[out_idx] = contact_body_pos[tid]
     candidate_normal[out_idx] = contact_normal[tid]
 
 
@@ -278,6 +281,15 @@ def _requires_newton_contacts(solver_name: str) -> bool:
     return solver in ("semi_implicit", "semi-implicit", "semi", "mujoco", "vbd")
 
 
+def _model_body_ids(model) -> list | None:
+    for attr in ("body_key", "body_label", "body_name"):
+        if hasattr(model, attr):
+            values = getattr(model, attr)
+            if values is not None:
+                return list(values)
+    return None
+
+
 def _configure_joint_hold(model: newton.Model, control: newton.Control, target_ke: float, target_kd: float) -> None:
     """Configure a simple global joint PD hold toward the model's reference pose."""
     if model.joint_count == 0 or model.joint_dof_count == 0:
@@ -332,17 +344,36 @@ def _apply_robot_pose_preset(model: newton.Model, control: newton.Control, prese
 
 def _joint_limits_by_name(model: newton.Model) -> dict[str, tuple[int, float, float]]:
     limits: dict[str, tuple[int, float, float]] = {}
-    if not hasattr(model, "joint_key") or model.joint_q_start is None:
+    if model.joint_q_start is None:
         return limits
-    keys = list(model.joint_key)
+    joint_ids = None
+    for attr in ("joint_key", "joint_label", "joint_name"):
+        if hasattr(model, attr):
+            values = getattr(model, attr)
+            if values is not None:
+                joint_ids = list(values)
+                break
+    if not joint_ids:
+        return limits
+
     q_start = model.joint_q_start.numpy()
     lower = model.joint_limit_lower.numpy() if model.joint_limit_lower is not None else None
     upper = model.joint_limit_upper.numpy() if model.joint_limit_upper is not None else None
-    for i, name in enumerate(keys):
+
+    full_names: list[str] = [str(name) for name in joint_ids]
+    suffix_counts: dict[str, int] = {}
+    for full_name in full_names:
+        suffix = full_name.split("/")[-1]
+        suffix_counts[suffix] = suffix_counts.get(suffix, 0) + 1
+
+    for i, name in enumerate(full_names):
         qi = int(q_start[i])
         lo = float(lower[qi]) if lower is not None and 0 <= qi < lower.shape[0] else -np.inf
         hi = float(upper[qi]) if upper is not None and 0 <= qi < upper.shape[0] else np.inf
         limits[name] = (qi, lo, hi)
+        suffix = name.split("/")[-1]
+        if suffix_counts.get(suffix, 0) == 1:
+            limits[suffix] = (qi, lo, hi)
     return limits
 
 
@@ -599,6 +630,8 @@ class Example:
             )
         )
         use_controllers_raw = _pick_param(pkl_params, args, "use_controllers")
+        if bool(getattr(args, "disable_pkl_controllers", False)):
+            use_controllers_raw = False
         # If drag is enabled from CLI, ensure controller particles exist even when PKL omits this flag.
         use_controllers = bool(use_controllers_raw) or bool(getattr(args, "enable_controller_drag", False))
         controller_k_val = _pick_param(pkl_params, args, "controller_k")
@@ -738,12 +771,13 @@ class Example:
         self.spring_collisions_enabled = bool(args.enable_spring_collisions) or _requires_newton_contacts(args.spring_solver)
         if self.spring_collisions_enabled:
             self.spring_collision_pipeline = newton.examples.create_collision_pipeline(
-                self.spring_model, args=args, collision_pipeline_type="unified"
+                self.spring_model,
+                args=args,
+                soft_contact_margin=self.spring_soft_contact_margin,
             )
             self.spring_contacts = self.spring_model.collide(
                 self.spring_state_0,
                 collision_pipeline=self.spring_collision_pipeline,
-                soft_contact_margin=self.spring_soft_contact_margin,
             )
         else:
             self.spring_collision_pipeline = None
@@ -804,9 +838,7 @@ class Example:
         self.robot_contacts = None
         self.robot_collisions_enabled = bool(args.enable_robot_collisions) or _requires_newton_contacts(args.robot_solver)
         if self.robot_collisions_enabled:
-            self.robot_collision_pipeline = newton.examples.create_collision_pipeline(
-                self.robot_model, args=args, collision_pipeline_type="unified"
-            )
+            self.robot_collision_pipeline = newton.examples.create_collision_pipeline(self.robot_model, args=args)
             self.robot_contacts = self.robot_model.collide(
                 self.robot_state_0, collision_pipeline=self.robot_collision_pipeline
             )
@@ -940,10 +972,12 @@ class Example:
         self.contact_patch_tangent_kd = float(args.contact_patch_tangent_kd)
         self.contact_patch_mu = max(0.0, float(args.contact_patch_mu))
         self.contact_patch_max_force = max(0.0, float(args.contact_patch_max_force))
+        self.contact_patch_max_gap = float(args.contact_patch_max_gap)
         self.contact_patch_break_distance = max(0.0, float(args.contact_patch_break_distance))
         self.contact_patch_release_missed_steps = max(1, int(args.contact_patch_release_missed_steps))
         self.contact_patch_refresh_interval = max(1, int(args.contact_patch_refresh_interval))
         self.contact_patch_log_interval = max(0, int(args.contact_patch_log_interval))
+        self._patch_refresh_counter = 0
 
         self._patch_particles = np.zeros(0, dtype=np.int32)
         self._patch_body_indices = np.zeros(0, dtype=np.int32)
@@ -974,6 +1008,11 @@ class Example:
             dtype=wp.int32,
             device=self.spring_model.device,
         )
+        self._patch_candidate_body_pos_wp = wp.zeros(
+            self._patch_candidate_capacity,
+            dtype=wp.vec3,
+            device=self.spring_model.device,
+        )
         self._patch_candidate_normal_wp = wp.zeros(
             self._patch_candidate_capacity,
             dtype=wp.vec3,
@@ -988,15 +1027,17 @@ class Example:
             self.contact_patch_enabled = False
             return
 
-        body_names = [str(k).lower() for k in self.spring_model.body_key]
+        body_ids = _model_body_ids(self.spring_model)
+        if body_ids is None:
+            LOGGER.warning("Contact patch enabled but spring model has no body identifiers.")
+            self.contact_patch_enabled = False
+            return
+        body_names = [str(k).lower() for k in body_ids]
         side_token = "r" if self.contact_patch_arm == "right" else "l"
         preferred = [i for i, name in enumerate(body_names) if f"gripper_{side_token}_" in name]
         if not preferred:
-            fallback = [i for i, name in enumerate(body_names) if f"arm_{side_token}_" in name]
-            preferred = fallback
-        if not preferred:
             LOGGER.warning(
-                "Contact patch enabled but no matching '%s' arm/gripper bodies were found.",
+                "Contact patch enabled but no matching '%s' gripper bodies were found.",
                 self.contact_patch_arm,
             )
             self.contact_patch_enabled = False
@@ -1018,11 +1059,15 @@ class Example:
             device=self.spring_model.device,
         )
         LOGGER.info(
-            "Contact patch enabled: arm=%s, candidate_shapes=%d, max_particles=%d, refresh_interval=%d.",
+            (
+                "Contact patch enabled: arm=%s, candidate_shapes=%d, max_particles=%d, "
+                "refresh_interval=%d, max_gap=%.4f."
+            ),
             self.contact_patch_arm,
             int(np.count_nonzero(shape_mask)),
             self.contact_patch_max_particles,
             self.contact_patch_refresh_interval,
+            self.contact_patch_max_gap,
         )
 
     def _sync_patch_device_buffers(self) -> None:
@@ -1057,11 +1102,12 @@ class Example:
         )
         self._patch_break_keep_wp = wp.zeros(count, dtype=wp.int32, device=self.spring_model.device)
 
-    def _gather_patch_contact_candidates(self) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    def _gather_patch_contact_candidates(self) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         if self.spring_contacts is None or self._patch_shape_mask_wp is None:
             return (
                 np.zeros(0, dtype=np.int32),
                 np.zeros(0, dtype=np.int32),
+                np.zeros((0, 3), dtype=np.float32),
                 np.zeros((0, 3), dtype=np.float32),
             )
 
@@ -1071,6 +1117,7 @@ class Example:
             return (
                 np.zeros(0, dtype=np.int32),
                 np.zeros(0, dtype=np.int32),
+                np.zeros((0, 3), dtype=np.float32),
                 np.zeros((0, 3), dtype=np.float32),
             )
 
@@ -1082,12 +1129,14 @@ class Example:
                 self.spring_contacts.soft_contact_count,
                 self.spring_contacts.soft_contact_particle,
                 self.spring_contacts.soft_contact_shape,
+                self.spring_contacts.soft_contact_body_pos,
                 self.spring_contacts.soft_contact_normal,
                 self._patch_shape_mask_wp,
                 self._patch_candidate_capacity,
                 self._patch_candidate_count_wp,
                 self._patch_candidate_particle_wp,
                 self._patch_candidate_shape_wp,
+                self._patch_candidate_body_pos_wp,
                 self._patch_candidate_normal_wp,
             ],
             device=self.spring_model.device,
@@ -1100,12 +1149,14 @@ class Example:
                 np.zeros(0, dtype=np.int32),
                 np.zeros(0, dtype=np.int32),
                 np.zeros((0, 3), dtype=np.float32),
+                np.zeros((0, 3), dtype=np.float32),
             )
 
         particle_np = self._patch_candidate_particle_wp.numpy()[:candidate_count].astype(np.int32, copy=False)
         shape_np = self._patch_candidate_shape_wp.numpy()[:candidate_count].astype(np.int32, copy=False)
+        body_pos_np = self._patch_candidate_body_pos_wp.numpy()[:candidate_count].astype(np.float32, copy=False)
         normal_np = self._patch_candidate_normal_wp.numpy()[:candidate_count].astype(np.float32, copy=False)
-        return particle_np, shape_np, normal_np
+        return particle_np, shape_np, body_pos_np, normal_np
 
     def _append_patch_anchor(
         self,
@@ -1148,12 +1199,50 @@ class Example:
             return
         if self._patch_shape_mask is None or self._shape_body_indices is None:
             return
-        valid_particles, valid_shapes, valid_normals = self._gather_patch_contact_candidates()
+        valid_particles, valid_shapes, valid_body_pos, valid_normals = self._gather_patch_contact_candidates()
         patch_changed = False
+        seen_particles = valid_particles
+
+        # Require actual touch (or penetration) for patch acquisition to avoid
+        # enabling stick constraints from margin-only proximity.
+        acquire_particles = valid_particles
+        acquire_shapes = valid_shapes
+        acquire_normals = valid_normals
+        if valid_particles.size > 0:
+            q_particle = self.spring_state_0.particle_q.numpy()
+            q_body = self.spring_state_0.body_q.numpy()
+            radii = self.spring_model.particle_radius.numpy() if self.spring_model.particle_radius is not None else None
+            keep_touch = np.zeros(valid_particles.shape[0], dtype=bool)
+            for i in range(valid_particles.shape[0]):
+                pidx = int(valid_particles[i])
+                sidx = int(valid_shapes[i])
+                if sidx < 0 or sidx >= self._shape_body_indices.shape[0]:
+                    continue
+                body_idx = int(self._shape_body_indices[sidx])
+                if body_idx < 0 or body_idx >= q_body.shape[0]:
+                    continue
+
+                particle_pos = q_particle[pidx, :3].astype(np.float32, copy=False)
+                body_pos = q_body[body_idx, :3].astype(np.float32, copy=False)
+                body_quat = q_body[body_idx, 3:7].astype(np.float32, copy=False)
+                contact_pos_local = valid_body_pos[i].astype(np.float32, copy=False)
+                contact_pos_world = body_pos + _quat_rotate_np(body_quat, contact_pos_local)
+                n_world = _normalize_np(valid_normals[i])
+                if float(np.linalg.norm(n_world)) <= 1.0e-8:
+                    continue
+
+                center_gap = float(np.dot(particle_pos - contact_pos_world, n_world))
+                radius = float(radii[pidx]) if radii is not None and pidx < radii.shape[0] else 0.0
+                surface_gap = center_gap - radius
+                keep_touch[i] = surface_gap <= self.contact_patch_max_gap
+
+            acquire_particles = valid_particles[keep_touch]
+            acquire_shapes = valid_shapes[keep_touch]
+            acquire_normals = valid_normals[keep_touch]
 
         if self._patch_particles.size > 0:
-            if valid_particles.size > 0:
-                seen = np.isin(self._patch_particles, valid_particles)
+            if seen_particles.size > 0:
+                seen = np.isin(self._patch_particles, seen_particles)
                 self._patch_missed_steps = np.where(seen, 0, self._patch_missed_steps + 1)
             else:
                 self._patch_missed_steps = self._patch_missed_steps + 1
@@ -1161,8 +1250,8 @@ class Example:
         existing = set(self._patch_particles.tolist())
         q_particle = None
         q_body = None
-        if valid_particles.size > 0:
-            unique_particles, first_idx = np.unique(valid_particles, return_index=True)
+        if acquire_particles.size > 0:
+            unique_particles, first_idx = np.unique(acquire_particles, return_index=True)
             order = np.argsort(first_idx)
             unique_particles = unique_particles[order]
             first_idx = first_idx[order]
@@ -1178,9 +1267,9 @@ class Example:
                         q_particle = self.spring_state_0.particle_q.numpy()
                         q_body = self.spring_state_0.body_q.numpy()
                     src_idx = int(first_idx[i])
-                    shape_idx = int(valid_shapes[src_idx])
+                    shape_idx = int(acquire_shapes[src_idx])
                     body_idx = int(self._shape_body_indices[shape_idx])
-                    normal_world = valid_normals[src_idx]
+                    normal_world = acquire_normals[src_idx]
                     self._append_patch_anchor(particle_idx, body_idx, normal_world, q_particle, q_body)
                     existing.add(particle_idx)
                     patch_changed = True
@@ -1268,17 +1357,19 @@ class Example:
 
     def _init_robot_spring_collider_sync(self) -> None:
         """Create body-index mapping for syncing robot poses into spring colliders."""
-        robot_by_key = {k: i for i, k in enumerate(self.robot_model.body_key)}
-        spring_by_key = {k: i for i, k in enumerate(self.spring_model.body_key)}
+        robot_ids = _model_body_ids(self.robot_model)
+        spring_ids = _model_body_ids(self.spring_model)
 
         robot_indices: list[int] = []
         spring_indices: list[int] = []
-        for key, r_idx in robot_by_key.items():
-            s_idx = spring_by_key.get(key)
-            if s_idx is None:
-                continue
-            robot_indices.append(r_idx)
-            spring_indices.append(s_idx)
+        if robot_ids is not None and spring_ids is not None:
+            spring_by_id = {body_id: i for i, body_id in enumerate(spring_ids)}
+            for r_idx, body_id in enumerate(robot_ids):
+                s_idx = spring_by_id.get(body_id)
+                if s_idx is None:
+                    continue
+                robot_indices.append(r_idx)
+                spring_indices.append(s_idx)
 
         self._robot_to_spring_robot_body_idx = np.asarray(robot_indices, dtype=np.int32)
         self._robot_to_spring_spring_body_idx = np.asarray(spring_indices, dtype=np.int32)
@@ -1288,10 +1379,10 @@ class Example:
                 self._robot_to_spring_robot_body_idx = np.arange(self.robot_model.body_count, dtype=np.int32)
                 self._robot_to_spring_spring_body_idx = np.arange(self.spring_model.body_count, dtype=np.int32)
                 LOGGER.warning(
-                    "No overlapping body keys found. Falling back to index-based robot->spring collider sync."
+                    "No overlapping body identifiers found. Falling back to index-based robot->spring collider sync."
                 )
             else:
-                LOGGER.warning("No overlapping body keys found between robot and spring collider models.")
+                LOGGER.warning("No overlapping body identifiers found between robot and spring collider models.")
 
     def _sync_robot_to_spring_colliders(self) -> None:
         """Copy robot body transforms/velocities into spring-model kinematic colliders."""
@@ -1567,11 +1658,12 @@ class Example:
                 self.spring_contacts = self.spring_model.collide(
                     self.spring_state_0,
                     collision_pipeline=self.spring_collision_pipeline,
-                    soft_contact_margin=self.spring_soft_contact_margin,
                 )
-            if self.contact_patch_enabled and (self._patch_step_counter % self.contact_patch_refresh_interval == 0):
-                self._refresh_contact_patch()
-            self._apply_contact_patch_constraints()
+            if self.contact_patch_enabled:
+                if self._patch_refresh_counter % self.contact_patch_refresh_interval == 0:
+                    self._refresh_contact_patch()
+                self._apply_contact_patch_constraints()
+                self._patch_refresh_counter += 1
             self.spring_solver.step(
                 self.spring_state_0,
                 self.spring_state_1,
@@ -1689,6 +1781,18 @@ def main() -> None:
         help="Solver for the spring-mass model.",
     )
     parser.add_argument(
+        "--mujoco-nconmax",
+        type=int,
+        default=None,
+        help="Override MuJoCo contact capacity (nconmax) for SolverMuJoCo.",
+    )
+    parser.add_argument(
+        "--mujoco-njmax",
+        type=int,
+        default=None,
+        help="Override MuJoCo constraint capacity (njmax) for SolverMuJoCo.",
+    )
+    parser.add_argument(
         "--robot-joint-ke",
         type=float,
         default=2.0e4,
@@ -1711,6 +1815,11 @@ def main() -> None:
         "--enable-controller-drag",
         action="store_true",
         help="Enable Shift+Right drag to move spring controller points as a group.",
+    )
+    parser.add_argument(
+        "--disable-pkl-controllers",
+        action="store_true",
+        help="Ignore controller springs specified by PKL params (unless controller drag explicitly needs them).",
     )
     parser.add_argument(
         "--mesh-show-points",
@@ -1856,6 +1965,12 @@ def main() -> None:
         type=float,
         default=4.0e3,
         help="Per-particle clamp for total patch force.",
+    )
+    parser.add_argument(
+        "--contact-patch-max-gap",
+        type=float,
+        default=0.0,
+        help="Max particle-surface gap for patch acquisition (0 means touching/penetrating only).",
     )
     parser.add_argument(
         "--contact-patch-break-distance",

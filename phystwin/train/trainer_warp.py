@@ -434,9 +434,7 @@ class InvPhyTrainerWarp:
         self.control = self.model.control()
         self.enable_collisions = bool(self.config.get("enable_collisions", False))
         if self.enable_collisions:
-            self.collision_pipeline = newton.examples.create_collision_pipeline(
-                self.model, collision_pipeline_type="standard"
-            )
+            self.collision_pipeline = newton.examples.create_collision_pipeline(self.model)
         else:
             self.collision_pipeline = None
 
@@ -1278,9 +1276,7 @@ class InvPhyTrainerWarp:
         enable_collisions = bool(self.config.get("enable_collisions", False))
         collision_pipeline = None
         if enable_collisions:
-            collision_pipeline = newton.examples.create_collision_pipeline(
-                model, collision_pipeline_type="standard"
-            )
+            collision_pipeline = newton.examples.create_collision_pipeline(model)
 
         object_count = mapping.object_points.shape[0]
 

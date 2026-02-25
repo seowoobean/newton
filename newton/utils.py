@@ -115,10 +115,17 @@ from ._src.math import (  # noqa: E402
     vec_min,
 )
 from ._src.utils import compute_world_offsets  # noqa: E402
-from ._src.utils.recorder import (  # noqa: E402
-    RecorderBasic,
-    RecorderModelAndState,
-)
+
+try:
+    from ._src.utils.recorder import (  # noqa: E402
+        RecorderBasic,
+        RecorderModelAndState,
+    )
+
+    _HAS_RECORDER_UTILS = True
+except ModuleNotFoundError:
+    # Recorder utilities are optional in this workspace.
+    _HAS_RECORDER_UTILS = False
 
 __all__ += [
     "boltzmann",
@@ -139,10 +146,11 @@ __all__ += [
 # ==================================================================================
 # recorder utils
 # ==================================================================================
-__all__ += [
-    "RecorderBasic",
-    "RecorderModelAndState",
-]
+if _HAS_RECORDER_UTILS:
+    __all__ += [
+        "RecorderBasic",
+        "RecorderModelAndState",
+    ]
 
 # ==================================================================================
 # asset management

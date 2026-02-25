@@ -337,9 +337,7 @@ class OptimizerCMA:
         state_0 = model.state()
         state_1 = model.state()
         control = model.control()
-        collision_pipeline = newton.examples.create_collision_pipeline(
-            model, collision_pipeline_type="standard"
-        )
+        collision_pipeline = newton.examples.create_collision_pipeline(model)
 
         object_count = mapping.object_points.shape[0]
         pkl_object_indices = mapping.pkl_object_indices
