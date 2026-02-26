@@ -10,7 +10,7 @@ CONFIG="phystwin/config/cloth.yaml"
 MONITOR_ARGS="--monitor --monitor-frames 116 --monitor-every 1"
 EXTRA_ARGS="${MONITOR_ARGS}"
 
-exec uv run python phystwin/optimize/optimize_cma.py \
+exec uv run --extra examples --with cma --with scipy python phystwin/optimize/optimize_cma.py \
   --base_path "$BASE_PATH" \
   --case_name "$CASE_NAME" \
   --train_frame "$TRAIN_FRAME" \

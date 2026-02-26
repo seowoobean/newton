@@ -7,7 +7,12 @@ import time
 from dataclasses import dataclass
 from typing import Any
 
-import cma
+try:
+    import cma
+except Exception as exc:  # pragma: no cover
+    raise ModuleNotFoundError(
+        "Missing dependency 'cma'. Run with: uv run --with cma python phystwin/optimize/optimize_cma.py ..."
+    ) from exc
 import numpy as np
 import warp as wp
 import yaml
