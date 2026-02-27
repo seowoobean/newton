@@ -14,7 +14,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/ffw_sg2_rev1_follower/base_mobile_assy.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/ffw_sg2_rev1_follower/base_mobile_assy.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="silver">
         <color rgba="0.75 0.75 0.75 1"/>
@@ -23,7 +23,7 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/ffw_sg2_rev1_follower/base_mobile_assy.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/ffw_sg2_rev1_follower/base_mobile_assy.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
     <inertial>
@@ -38,7 +38,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/ffw_sg2_rev1_follower/lift_link.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/ffw_sg2_rev1_follower/lift_link.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="silver">
         <color rgba="0.75 0.75 0.75 1"/>
@@ -47,7 +47,7 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/ffw_sg2_rev1_follower/lift_link.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/ffw_sg2_rev1_follower/lift_link.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
     <inertial>
@@ -81,7 +81,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/common/follower/body_arm_assy.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/common/follower/body_arm_assy.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="white">
         <color rgba="1 1 1 1"/>
@@ -90,7 +90,7 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/common/follower/body_arm_assy.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/common/follower/body_arm_assy.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
     <inertial>
@@ -111,7 +111,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/common/follower/head_link1.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/common/follower/head_link1.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="grey">
         <color rgba="0.2 0.2 0.2 1"/>
@@ -120,7 +120,7 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/common/follower/head_link1.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/common/follower/head_link1.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
     <inertial>
@@ -141,7 +141,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/common/follower/head_link2.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/common/follower/head_link2.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="white">
         <color rgba="1 1 1 1"/>
@@ -150,7 +150,7 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/common/follower/head_link2.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/common/follower/head_link2.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
     <inertial>
@@ -171,7 +171,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/common/follower/arm_l_link1.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/common/follower/arm_l_link1.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="black">
         <color rgba="0.2 0.2 0.2 1"/>
@@ -180,7 +180,7 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/common/follower/arm_l_link1.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/common/follower/arm_l_link1.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
     <inertial>
@@ -201,7 +201,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/common/follower/arm_l_link2.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/common/follower/arm_l_link2.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="black">
         <color rgba="0.2 0.2 0.2 1"/>
@@ -210,7 +210,7 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/common/follower/arm_l_link2.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/common/follower/arm_l_link2.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
     <inertial>
@@ -231,7 +231,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/common/follower/arm_l_link3.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/common/follower/arm_l_link3.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="black">
         <color rgba="0.2 0.2 0.2 1"/>
@@ -240,7 +240,7 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/common/follower/arm_l_link3.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/common/follower/arm_l_link3.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
     <inertial>
@@ -261,7 +261,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/common/follower/arm_l_link4.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/common/follower/arm_l_link4.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="black">
         <color rgba="0.2 0.2 0.2 1"/>
@@ -270,7 +270,7 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/common/follower/arm_l_link4.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/common/follower/arm_l_link4.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
     <inertial>
@@ -291,7 +291,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/common/follower/arm_l_link5.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/common/follower/arm_l_link5.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="black">
         <color rgba="0.2 0.2 0.2 1"/>
@@ -300,7 +300,7 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/common/follower/arm_l_link5.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/common/follower/arm_l_link5.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
     <inertial>
@@ -321,7 +321,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/common/follower/arm_l_link6.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/common/follower/arm_l_link6.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="black">
         <color rgba="0.2 0.2 0.2 1"/>
@@ -330,7 +330,7 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/common/follower/arm_l_link6.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/common/follower/arm_l_link6.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
     <inertial>
@@ -351,7 +351,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/common/follower/arm_l_link7.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/common/follower/arm_l_link7.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="black">
         <color rgba="0.2 0.2 0.2 1"/>
@@ -360,7 +360,7 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/common/follower/arm_l_link7.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/common/follower/arm_l_link7.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
     <inertial>
@@ -386,7 +386,7 @@
       <!-- the mesh origin is at front plate in between the two infrared camera axes -->
       <origin rpy="1.5707963267948966 0 1.5707963267948966" xyz="0.0038 -0.009 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/common/follower/zedm.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/common/follower/zedm.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="aluminum"/>
     </visual>
@@ -414,7 +414,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/common/follower/arm_r_link1.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/common/follower/arm_r_link1.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="black">
         <color rgba="0.2 0.2 0.2 1"/>
@@ -423,7 +423,7 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/common/follower/arm_r_link1.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/common/follower/arm_r_link1.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
     <inertial>
@@ -444,7 +444,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/common/follower/arm_r_link2.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/common/follower/arm_r_link2.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="black">
         <color rgba="0.2 0.2 0.2 1"/>
@@ -453,7 +453,7 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/common/follower/arm_r_link2.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/common/follower/arm_r_link2.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
     <inertial>
@@ -474,7 +474,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/common/follower/arm_r_link3.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/common/follower/arm_r_link3.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="black">
         <color rgba="0.2 0.2 0.2 1"/>
@@ -483,7 +483,7 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/common/follower/arm_r_link3.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/common/follower/arm_r_link3.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
     <inertial>
@@ -504,7 +504,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/common/follower/arm_r_link4.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/common/follower/arm_r_link4.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="black">
         <color rgba="0.2 0.2 0.2 1"/>
@@ -513,7 +513,7 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/common/follower/arm_r_link4.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/common/follower/arm_r_link4.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
     <inertial>
@@ -534,7 +534,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/common/follower/arm_r_link5.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/common/follower/arm_r_link5.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="black">
         <color rgba="0.2 0.2 0.2 1"/>
@@ -543,7 +543,7 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/common/follower/arm_r_link5.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/common/follower/arm_r_link5.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
     <inertial>
@@ -564,7 +564,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/common/follower/arm_r_link6.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/common/follower/arm_r_link6.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="black">
         <color rgba="0.2 0.2 0.2 1"/>
@@ -573,7 +573,7 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/common/follower/arm_r_link6.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/common/follower/arm_r_link6.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
     <inertial>
@@ -594,7 +594,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/common/follower/arm_r_link7.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/common/follower/arm_r_link7.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="black">
         <color rgba="0.2 0.2 0.2 1"/>
@@ -603,7 +603,7 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/common/follower/arm_r_link7.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/common/follower/arm_r_link7.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
     <inertial>
@@ -629,7 +629,7 @@
       <!-- the mesh origin is at front plate in between the two infrared camera axes -->
       <origin rpy="1.5707963267948966 0 1.5707963267948966" xyz="0.0038 -0.009 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/common/follower/zedm.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/common/follower/zedm.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="aluminum"/>
     </visual>
@@ -656,13 +656,13 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/common/rh_p12_rn_a/base.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/common/rh_p12_rn_a/base.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/common/rh_p12_rn_a/base.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/common/rh_p12_rn_a/base.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="grey">
         <color rgba="0.2 0.2 0.2 1"/>
@@ -695,13 +695,13 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/common/rh_p12_rn_a/r1.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/common/rh_p12_rn_a/r1.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/common/rh_p12_rn_a/r1.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/common/rh_p12_rn_a/r1.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="grey">
         <color rgba="0.2 0.2 0.2 1"/>
@@ -728,13 +728,13 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/common/rh_p12_rn_a/r2.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/common/rh_p12_rn_a/r2.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/common/rh_p12_rn_a/r2.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/common/rh_p12_rn_a/r2.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="grey">
         <color rgba="0.2 0.2 0.2 1"/>
@@ -761,13 +761,13 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/common/rh_p12_rn_a/l1.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/common/rh_p12_rn_a/l1.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/common/rh_p12_rn_a/l1.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/common/rh_p12_rn_a/l1.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="grey">
         <color rgba="0.2 0.2 0.2 1"/>
@@ -794,13 +794,13 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/common/rh_p12_rn_a/l2.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/common/rh_p12_rn_a/l2.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/common/rh_p12_rn_a/l2.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/common/rh_p12_rn_a/l2.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="grey">
         <color rgba="0.2 0.2 0.2 1"/>
@@ -822,13 +822,13 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/common/rh_p12_rn_a/base.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/common/rh_p12_rn_a/base.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/common/rh_p12_rn_a/base.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/common/rh_p12_rn_a/base.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="grey">
         <color rgba="0.2 0.2 0.2 1"/>
@@ -861,13 +861,13 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/common/rh_p12_rn_a/r1.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/common/rh_p12_rn_a/r1.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/common/rh_p12_rn_a/r1.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/common/rh_p12_rn_a/r1.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="grey">
         <color rgba="0.2 0.2 0.2 1"/>
@@ -894,13 +894,13 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/common/rh_p12_rn_a/r2.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/common/rh_p12_rn_a/r2.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/common/rh_p12_rn_a/r2.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/common/rh_p12_rn_a/r2.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="grey">
         <color rgba="0.2 0.2 0.2 1"/>
@@ -927,13 +927,13 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/common/rh_p12_rn_a/l1.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/common/rh_p12_rn_a/l1.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/common/rh_p12_rn_a/l1.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/common/rh_p12_rn_a/l1.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="grey">
         <color rgba="0.2 0.2 0.2 1"/>
@@ -960,13 +960,13 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/common/rh_p12_rn_a/l2.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/common/rh_p12_rn_a/l2.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/common/rh_p12_rn_a/l2.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/common/rh_p12_rn_a/l2.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="grey">
         <color rgba="0.2 0.2 0.2 1"/>
@@ -989,7 +989,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/ffw_sg2_rev1_follower/left_wheel_steer_link.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/ffw_sg2_rev1_follower/left_wheel_steer_link.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="silver">
         <color rgba="0.75 0.75 0.75 1"/>
@@ -998,7 +998,7 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/ffw_sg2_rev1_follower/left_wheel_steer_link.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/ffw_sg2_rev1_follower/left_wheel_steer_link.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
     <inertial>
@@ -1018,7 +1018,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/ffw_sg2_rev1_follower/left_wheel_drive_link.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/ffw_sg2_rev1_follower/left_wheel_drive_link.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="silver">
         <color rgba="0.75 0.75 0.75 1"/>
@@ -1027,7 +1027,7 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/ffw_sg2_rev1_follower/left_wheel_drive_link.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/ffw_sg2_rev1_follower/left_wheel_drive_link.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
     <inertial>
@@ -1047,7 +1047,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/ffw_sg2_rev1_follower/right_wheel_steer_link.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/ffw_sg2_rev1_follower/right_wheel_steer_link.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="silver">
         <color rgba="0.75 0.75 0.75 1"/>
@@ -1056,7 +1056,7 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/ffw_sg2_rev1_follower/right_wheel_steer_link.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/ffw_sg2_rev1_follower/right_wheel_steer_link.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
     <inertial>
@@ -1076,7 +1076,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/ffw_sg2_rev1_follower/right_wheel_drive_link.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/ffw_sg2_rev1_follower/right_wheel_drive_link.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="silver">
         <color rgba="0.75 0.75 0.75 1"/>
@@ -1085,7 +1085,7 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/ffw_sg2_rev1_follower/right_wheel_drive_link.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/ffw_sg2_rev1_follower/right_wheel_drive_link.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
     <inertial>
@@ -1105,7 +1105,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/ffw_sg2_rev1_follower/rear_wheel_steer_link.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/ffw_sg2_rev1_follower/rear_wheel_steer_link.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="silver">
         <color rgba="0.75 0.75 0.75 1"/>
@@ -1114,7 +1114,7 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/ffw_sg2_rev1_follower/rear_wheel_steer_link.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/ffw_sg2_rev1_follower/rear_wheel_steer_link.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
     <inertial>
@@ -1134,7 +1134,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/ffw_sg2_rev1_follower/rear_wheel_drive_link.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/ffw_sg2_rev1_follower/rear_wheel_drive_link.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="silver">
         <color rgba="0.75 0.75 0.75 1"/>
@@ -1143,7 +1143,7 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://ffw_description/meshes/ffw_sg2_rev1_follower/rear_wheel_drive_link.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./ffw_description/meshes/ffw_sg2_rev1_follower/rear_wheel_drive_link.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
     <inertial>
